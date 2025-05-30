@@ -1,0 +1,32 @@
+# Ignore Gradle files
+.gradle/
+build/
+*/build/
+
+# Local configuration file (sdk path, etc)
+local.properties
+
+# IntelliJ IDEA
+*.iml
+.idea/
+.idea/caches/
+.idea/libraries/
+.idea/modules.xml
+.idea/workspace.xml
+.idea/navEditor.xml
+.idea/assetWizardSettings.xml
+
+# Android Studio
+.cxx/
+.externalNativeBuild/
+
+# OS-specific files
+.DS_Store
+
+# Debugger and Capture files
+captures/
+
+# Exclude specific assets folder
+app/src/main/assets/
+
+
