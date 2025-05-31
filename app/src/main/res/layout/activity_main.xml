@@ -36,12 +36,12 @@
 
         <ImageButton
             android:id="@+id/buttonClearCache"
-            android:layout_width="41dp"
+            android:layout_width="40dp"
             android:layout_height="40dp"
-            android:layout_marginEnd="10dp"
+            android:layout_marginEnd="15dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:scaleType="centerInside"
-            android:src="@drawable/cache_clean" />
+            android:src="@drawable/toolbar_cache" />
 
         <ImageButton
             android:id="@+id/buttonClose"
@@ -49,7 +49,7 @@
             android:layout_height="40dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:scaleType="centerInside"
-            android:src="@drawable/close" />
+            android:src="@drawable/toolbar_close" />
 
     </LinearLayout>
 

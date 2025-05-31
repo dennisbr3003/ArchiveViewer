@@ -8,4 +8,6 @@
     <string name="archive_not_found">Asset does not exist</string>
     <string name="files">"Files : "</string>
     <string name="thumbnail">thumbnail</string>
+    <string name="invalid_zip_archive">This is not a valid ZIP archive</string>
+    <string name="invalid_password">Invalid password provided</string>
 </resources>

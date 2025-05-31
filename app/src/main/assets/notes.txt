@@ -1,0 +1,12 @@
+You can create new project using java language in Android Studio Meerkat version using below steps:
+
+1. Open Android Studio
+2. click on new project
+3. Select Empty Views Activity
+4. Click on next button
+5. Then select Java from Language drop down section
+6. Then select Groovy DSL (build.gradle) from Build Configuration Language drop down
+7. Now click Finish button.
+
+toolbar icons: Gentlecons Interface Icons Collection
+https://www.svgrepo.com/collection/gentlecons-interface-icons/1?search=
