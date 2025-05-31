@@ -3,8 +3,10 @@ package com.dennisbrink.mt.global.mypackedfileviewer;
 public class ZipLibraryExtraData {
 
     private String fileSize, fileDate, numFiles, errorMessage, warningMessage;
+    private LockStatus lockState;
     private Boolean isCopied = true;
     private Boolean inAssets = true;
+    private Boolean isValidZip = false;
 
     public String getErrorMessage() {
         return errorMessage;
@@ -63,5 +65,21 @@ public class ZipLibraryExtraData {
 
     public void setNumFiles(int numFiles) {
         this.numFiles = ZipApplication.getAppContext().getString(R.string.files) + numFiles;
+    }
+
+    public LockStatus getLockState() {
+        return lockState;
+    }
+
+    public void setLockState(LockStatus lockState) {
+        this.lockState = lockState;
+    }
+
+    public Boolean getValidZip() {
+        return isValidZip;
+    }
+
+    public void setValidZip(Boolean validZip) {
+        isValidZip = validZip;
     }
 }

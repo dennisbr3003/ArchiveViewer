@@ -58,14 +58,38 @@ public class ZipUtilities {
         }
 
         if(tempFile.exists()) {
+            // first check the file without opening it
+            try (ZipFile zipFile = new ZipFile(tempFile)) {
+                zipLibraryExtraData.setValidZip(zipFile.isValidZipFile());
+                if (zipFile.isValidZipFile()) {
+                    if (!zipkey.isEmpty() && zipFile.isEncrypted()) {
+                        zipLibraryExtraData.setLockState(LockStatus.LOCKED_PASSWORD);
+                    }
+                    if (zipkey.isEmpty() && zipFile.isEncrypted()) {
+                        zipLibraryExtraData.setLockState(LockStatus.LOCKED_NO_PASSWORD);
+                    }
+                    if (!zipFile.isEncrypted()) {
+                        zipLibraryExtraData.setLockState(LockStatus.NOT_LOCKED);
+                    }
+                }
+            } catch (IOException e) {
+                zipLibraryExtraData.setValidZip(false);
+                zipLibraryExtraData.setErrorMessage(ZipApplication.getAppContext().getString(R.string.invalid_zip_archive));
+                zipLibraryExtraData.setLockState(LockStatus.UNKNOWN);
+            }
+
+            
             try (ZipFile zipFile = new ZipFile(tempFile, zipkey.toCharArray())) {
                 zipLibraryExtraData.setFileDate(tempFile.lastModified());
                 zipLibraryExtraData.setFileSize(tempFile.length());
                 zipLibraryExtraData.setNumFiles(zipFile.getFileHeaders().size());
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                zipLibraryExtraData.setValidZip(false);
+                zipLibraryExtraData.setErrorMessage(ZipApplication.getAppContext().getString(R.string.invalid_password));
+                zipLibraryExtraData.setLockState(LockStatus.LOCKED_CORRUPTED);
             }
         } else {
+            zipLibraryExtraData.setLockState(LockStatus.UNKNOWN);
             if(checkIfFileExistsInAssetsFolder(source)){
                 try {
                     zipLibraryExtraData.setFileSize(assetManager.open(source).available());
