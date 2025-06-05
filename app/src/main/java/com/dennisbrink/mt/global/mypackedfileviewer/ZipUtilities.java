@@ -43,7 +43,52 @@ public class ZipUtilities {
         return false;
     }
 
-    public static ZipLibraryExtraData getFileData(String target, String source, String zipkey) {
+    public static boolean copyZipFromAsset(String target, String source) {
+
+        File tempFile = new File(ZipApplication.getAppContext().getFilesDir(), target);
+
+        if (!tempFile.exists()) {
+            try (InputStream inputStream = ZipApplication.getAppContext().getAssets().open(source);
+                 FileOutputStream outputStream = new FileOutputStream(tempFile)) {
+
+                byte[] buffer = new byte[1024];
+                int length;
+
+                while ((length = inputStream.read(buffer)) > 0) {
+                    outputStream.write(buffer, 0, length);
+                }
+
+            }
+            catch (Exception e){
+                Log.d("DB1", "ZipUtilities.copyZipFromAssetZip: file could not be copied to files dir: " + Objects.requireNonNull(e.getMessage()));
+                return false; // not copied
+            }
+        }
+        return true; // file exists or is copied successfully
+    }
+    public static boolean isValidZipPassword(String target, String source, String zipkey){
+        // the file exist
+        File tempFile = new File(ZipApplication.getAppContext().getFilesDir(), target);
+
+        try (ZipFile zipFile = new ZipFile(tempFile, zipkey.toCharArray())) {
+            for (FileHeader fileHeader : zipFile.getFileHeaders()) {
+                // Attempt to extract
+                InputStream is = zipFile.getInputStream(fileHeader);
+                byte[] b = new byte[4 * 4096];
+                while (is.read(b) != -1) {
+                    // Do nothing as we just want to verify password
+                }
+                is.close();
+                // Exit after the first successful read
+                break;
+            }
+        } catch (Exception e) {
+            return false; // password not correct
+        }
+        return true; // password correct
+
+    }
+    public static ZipLibraryExtraData getZipLibraryExtraData(String target, String source, String zipkey) {
 
         File tempFile = new File(ZipApplication.getAppContext().getFilesDir(), target);
         ZipLibraryExtraData zipLibraryExtraData = new ZipLibraryExtraData();
@@ -64,6 +109,9 @@ public class ZipUtilities {
                 if (zipFile.isValidZipFile()) {
                     if (!zipkey.isEmpty() && zipFile.isEncrypted()) {
                         zipLibraryExtraData.setLockState(LockStatus.LOCKED_PASSWORD);
+                        if(!isValidZipPassword(target, source, zipkey)){
+                            zipLibraryExtraData.setLockState(LockStatus.LOCKED_CORRUPTED);
+                        }
                     }
                     if (zipkey.isEmpty() && zipFile.isEncrypted()) {
                         zipLibraryExtraData.setLockState(LockStatus.LOCKED_NO_PASSWORD);
@@ -223,45 +271,49 @@ public class ZipUtilities {
         Context context = ZipApplication.getAppContext();
 
         // Copy ZIP file from assets to a file if it does not already exist
+//        File tempFile = new File(context.getFilesDir(), target);
+//
+//        if (!tempFile.exists()) {
+//            try (InputStream inputStream = context.getAssets().open(source);
+//                FileOutputStream outputStream = new FileOutputStream(tempFile)) {
+//                byte[] buffer = new byte[1024];
+//                int length;
+//                while ((length = inputStream.read(buffer)) > 0) {
+//                    outputStream.write(buffer, 0, length);
+//                }
+//            }
+//            catch (Exception e){
+//                Log.d("DB1", "Zip file could not be copied to files dir: " + Objects.requireNonNull(e.getMessage()));
+//            }
+//        }
+
+        copyZipFromAsset(target, source);
         File tempFile = new File(context.getFilesDir(), target);
-        if (!tempFile.exists()) {
-            try (InputStream inputStream = context.getAssets().open(source);
-                FileOutputStream outputStream = new FileOutputStream(tempFile)) {
-                byte[] buffer = new byte[1024];
-                int length;
-                while ((length = inputStream.read(buffer)) > 0) {
-                    outputStream.write(buffer, 0, length);
-                }
-            }
-            catch (Exception e){
-                Log.d("DB1", "Zip file could not be copied to files dir: " + Objects.requireNonNull(e.getMessage()));
-            }
-        }
 
         // file is copied form assets to files dir where zip4j can reach it. Zip4j cannot read from stream
         // We must now read the contents from the library, assuming we have access for now
-        if (tempFile.exists()) {
-            try (ZipFile zipFile = new ZipFile(tempFile, zipkey.toCharArray())) {
-                Log.d("DB1", "zipFile is zip file? " + zipFile.isValidZipFile());
-                Log.d("DB1", "zipFile is encrypted zip file? " + zipFile.isEncrypted());
-                Log.d("DB1", "zipFile is there a password? " + !zipkey.isEmpty());
+        //if (tempFile.exists()) {
+        try (ZipFile zipFile = new ZipFile(tempFile, zipkey.toCharArray())) {
+            Log.d("DB1", "zipFile is zip file? " + zipFile.isValidZipFile());
+            Log.d("DB1", "zipFile is encrypted zip file? " + zipFile.isEncrypted());
+            Log.d("DB1", "zipFile is there a password? " + !zipkey.isEmpty());
 
-                setZipFile(zipFile);
+            setZipFile(zipFile);
 
-                for (FileHeader fileHeader : zipFile.getFileHeaders()) {
-                    ZipEntryData data = new ZipEntryData(
-                            fileHeader.getFileName(),
-                            fileHeader.getUncompressedSize(),
-                            fileHeader.getLastModifiedTimeEpoch()
-                    );
-                    data.setCacheName(target, String.valueOf(fileHeader.getFileName().hashCode()));
-                    entryDataList.add(data);
-                    Log.d("DB1", data.toString());
-                }
-            } catch (Exception e) {
-                Log.d("DB1", "Zip file " + source + " could not be read: " + Objects.requireNonNull(e.getMessage()));
+            for (FileHeader fileHeader : zipFile.getFileHeaders()) {
+                ZipEntryData data = new ZipEntryData(
+                        fileHeader.getFileName(),
+                        fileHeader.getUncompressedSize(),
+                        fileHeader.getLastModifiedTimeEpoch()
+                );
+                data.setCacheName(target, String.valueOf(fileHeader.getFileName().hashCode()));
+                entryDataList.add(data);
+                Log.d("DB1", data.toString());
             }
+        } catch (Exception e) {
+            Log.d("DB1", "Zip file " + source + " could not be read: " + Objects.requireNonNull(e.getMessage()));
         }
+        //}
         return entryDataList;
     }
 
