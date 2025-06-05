@@ -29,6 +29,9 @@ public class ZipFileActivity extends AppCompatActivity {
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
+
+                Log.d("DB1", "Back pressed, setting result and finishing");
+
                 // Prepare result data
                 Intent resultIntent = new Intent();
                 // Put the position in the intent extras
