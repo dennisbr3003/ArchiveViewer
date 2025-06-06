@@ -66,7 +66,7 @@ public class ZipUtilities {
         }
         return true; // file exists or is copied successfully
     }
-    public static boolean isValidZipPassword(String target, String source, String zipkey){
+    public static boolean isValidZipPassword(String target, String zipkey){
         // the file exist
         File tempFile = new File(ZipApplication.getAppContext().getFilesDir(), target);
 
@@ -109,7 +109,7 @@ public class ZipUtilities {
                 if (zipFile.isValidZipFile()) {
                     if (!zipkey.isEmpty() && zipFile.isEncrypted()) {
                         zipLibraryExtraData.setLockState(LockStatus.LOCKED_PASSWORD);
-                        if(!isValidZipPassword(target, source, zipkey)){
+                        if(!isValidZipPassword(target, zipkey)){
                             zipLibraryExtraData.setLockState(LockStatus.LOCKED_CORRUPTED);
                         }
                     }
@@ -271,28 +271,11 @@ public class ZipUtilities {
         Context context = ZipApplication.getAppContext();
 
         // Copy ZIP file from assets to a file if it does not already exist
-//        File tempFile = new File(context.getFilesDir(), target);
-//
-//        if (!tempFile.exists()) {
-//            try (InputStream inputStream = context.getAssets().open(source);
-//                FileOutputStream outputStream = new FileOutputStream(tempFile)) {
-//                byte[] buffer = new byte[1024];
-//                int length;
-//                while ((length = inputStream.read(buffer)) > 0) {
-//                    outputStream.write(buffer, 0, length);
-//                }
-//            }
-//            catch (Exception e){
-//                Log.d("DB1", "Zip file could not be copied to files dir: " + Objects.requireNonNull(e.getMessage()));
-//            }
-//        }
-
         copyZipFromAsset(target, source);
         File tempFile = new File(context.getFilesDir(), target);
 
         // file is copied form assets to files dir where zip4j can reach it. Zip4j cannot read from stream
         // We must now read the contents from the library, assuming we have access for now
-        //if (tempFile.exists()) {
         try (ZipFile zipFile = new ZipFile(tempFile, zipkey.toCharArray())) {
             Log.d("DB1", "zipFile is zip file? " + zipFile.isValidZipFile());
             Log.d("DB1", "zipFile is encrypted zip file? " + zipFile.isEncrypted());
@@ -313,7 +296,7 @@ public class ZipUtilities {
         } catch (Exception e) {
             Log.d("DB1", "Zip file " + source + " could not be read: " + Objects.requireNonNull(e.getMessage()));
         }
-        //}
+
         return entryDataList;
     }
 

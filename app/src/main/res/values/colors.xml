@@ -4,4 +4,6 @@
     <color name="white">#FFFFFFFF</color>
     <color name="red">#FFFF6666</color>
     <color name="orange">#FFFF9966</color>
+    <color name="fluorgreen">#FF00FF40</color>
+    <color name="transparent">#00FFFFFF</color>
 </resources>
