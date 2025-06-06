@@ -3,6 +3,8 @@ package com.dennisbrink.mt.global.mypackedfileviewer;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -11,6 +13,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -19,18 +22,15 @@ import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import net.lingala.zip4j.ZipFile;
-import net.lingala.zip4j.model.FileHeader;
-
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 
 public class ZipLibraryAdapter extends RecyclerView.Adapter<ZipLibraryAdapter.LibraryViewHolder> {
 
     private final ActivityResultLauncher<Intent> launcher;
     ThumbnailCache thumbnailCache = new ThumbnailCache();
-
+    private boolean blockClickListener = false;
+    private boolean showDialog = false;
     public ZipLibraryAdapter(ActivityResultLauncher<Intent> launcher) {
         this.launcher = launcher;
     }
@@ -47,12 +47,8 @@ public class ZipLibraryAdapter extends RecyclerView.Adapter<ZipLibraryAdapter.Li
     public void onBindViewHolder(@NonNull LibraryViewHolder holder, int position) {
         try {
 
-            Log.d("DB1", "Library onBindViewHolder 1");
-
             ZipLibrary library = ZipApplication.getLibraries().get(position);
             holder.nameTextView.setText(library.getName());
-
-            Log.d("DB1", "Library onBindViewHolder 2");
 
             try {
                 ZipUtilities.initAssetManager();
@@ -60,7 +56,6 @@ public class ZipLibraryAdapter extends RecyclerView.Adapter<ZipLibraryAdapter.Li
                 throw new RuntimeException(e);
             }
 
-            Log.d("DB1", "Start getting extra data");
             ZipLibraryExtraData zipLibraryExtraData = ZipUtilities.getZipLibraryExtraData(library.getTarget(), library.getSource(), library.getZipkey());
 
             holder.libraryError.setVisibility(View.GONE);
@@ -100,7 +95,7 @@ public class ZipLibraryAdapter extends RecyclerView.Adapter<ZipLibraryAdapter.Li
                 holder.libraryStateImageview.setImageResource(R.drawable.zipfile_error);
             }
 
-            switch(zipLibraryExtraData.getLockState()) {
+            switch (zipLibraryExtraData.getLockState()) {
                 case LOCKED_PASSWORD:
                     holder.lockStateImageView.setImageResource(R.drawable.lockstate_unlocked);
                     break;
@@ -115,13 +110,9 @@ public class ZipLibraryAdapter extends RecyclerView.Adapter<ZipLibraryAdapter.Li
                     holder.passwordWarningImageView.setVisibility(View.VISIBLE);
                     break;
                 default:
-                     holder.lockStateImageView.setImageResource(R.drawable.lockstate_unknown);
-                     break;
+                    holder.lockStateImageView.setImageResource(R.drawable.lockstate_unknown);
+                    break;
             }
-
-//            if(zipLibraryExtraData.getIsCopied() && zipLibraryExtraData.getValidZip()) {
-//
-//            }
 
             holder.fileSizeTextView.setText(zipLibraryExtraData.getFileSize());
             if (zipLibraryExtraData.getInAssets() && zipLibraryExtraData.getIsCopied()) {
@@ -134,56 +125,65 @@ public class ZipLibraryAdapter extends RecyclerView.Adapter<ZipLibraryAdapter.Li
             // add a click listener to the holder
             holder.itemView.setOnClickListener(v -> {
 
-                Log.d("DB1", "clicked on library");
-                Log.d("DB1", "zip copied locally " + zipLibraryExtraData.getIsCopied());
-                Log.d("DB1", "valid zip " + zipLibraryExtraData.getValidZip());
-                Log.d("DB1", "valid zip in assets " + zipLibraryExtraData.getInAssets());
+                if (blockClickListener) return;
 
                 // block click on invalid and not existing archives
-                if((!zipLibraryExtraData.getValidZip() && zipLibraryExtraData.getIsCopied()) || !zipLibraryExtraData.getInAssets()) return;
+                if ((!zipLibraryExtraData.getValidZip() && zipLibraryExtraData.getIsCopied()) || !zipLibraryExtraData.getInAssets())
+                    return;
 
                 // what to do if there is no file copied and no password. we need to copy it and check
                 // if the file is encrypted. If it is, show the dialog, if it's not open it because there is no password.
                 // also we need to check if the password is correct (also if the password is already known). We should always
                 // copy the file here if it is not already
 
-                boolean showDialog = false;
+                blockClickListener = true;
+
+                if (holder.progressBarLib != null) {
+                    if (holder.progressBarLib.getVisibility() == View.INVISIBLE) {
+                        holder.progressBarLib.setVisibility(View.VISIBLE);
+                    } else {
+                        holder.progressBarLib.setVisibility(View.INVISIBLE);
+                    }
+                }
 
                 // 1. copy file here
                 // 2. check zip file vitals
                 // 3. decide if we need to show the dialog
-
-                if (ZipUtilities.copyZipFromAsset(ZipApplication.getLibraries().get(position).getTarget(),
-                    ZipApplication.getLibraries().get(position).getSource())) {
-                    File tempFile = new File(ZipApplication.getAppContext().getFilesDir(), ZipApplication.getLibraries().get(position).getTarget());
-                    try(ZipFile zipFile = new ZipFile(tempFile)){
-                        if(zipFile.isValidZipFile()) {
-                            if (zipFile.isEncrypted()) {
-                                // encrypted library but no password so we need user input here
-                                if(ZipApplication.getLibraries().get(position).getZipkey().isEmpty()) showDialog = true; // valid zip file no password
-                                else {
-                                    // try the password, if it is ok then we move on else we do not and ask the correct one
-                                    // password not correct
-                                    showDialog = !ZipUtilities.isValidZipPassword(ZipApplication.getLibraries().get(position).getTarget(),
-                                                                                  ZipApplication.getLibraries().get(position).getSource(),
-                                                                                  ZipApplication.getLibraries().get(position).getZipkey()); // password valid?
+                new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                    if (ZipUtilities.copyZipFromAsset(ZipApplication.getLibraries().get(position).getTarget(),
+                            ZipApplication.getLibraries().get(position).getSource())) {
+                        File tempFile = new File(ZipApplication.getAppContext().getFilesDir(), ZipApplication.getLibraries().get(position).getTarget());
+                        try (ZipFile zipFile = new ZipFile(tempFile)) {
+                            if (zipFile.isValidZipFile()) {
+                                if (zipFile.isEncrypted()) {
+                                    // encrypted library but no password so we need user input here
+                                    if (ZipApplication.getLibraries().get(position).getZipkey().isEmpty())
+                                        showDialog = true; // valid zip file no password
+                                    else {
+                                        // try the password, if it is ok then we move on else we do not and ask the correct one
+                                        showDialog = !ZipUtilities.isValidZipPassword(ZipApplication.getLibraries().get(position).getTarget(),
+                                                      ZipApplication.getLibraries().get(position).getZipkey()); // password valid?
+                                    }
                                 }
                             }
+                        } catch (IOException e) {
+                            showDialog = false; // zip file is not valid
                         }
-                    } catch (IOException e) {
-                        showDialog = false; // zip file is not valid
                     }
-                }
-
-//                if (zipLibraryExtraData.getLockState().equals(LockStatus.LOCKED_CORRUPTED) ||
-//                    zipLibraryExtraData.getLockState().equals(LockStatus.LOCKED_NO_PASSWORD)) {
-                if(showDialog){
-                    showPasswordDialog(v.getContext(), position);
-                } else {
-                    handleZipOpening(v.getContext(), library.getZipkey(), position);
-                }
+                    if (showDialog) {
+                        showPasswordDialog(v.getContext(), position, holder);
+                        if (holder.progressBarLib != null) {
+                            if (holder.progressBarLib.getVisibility() == View.INVISIBLE) {
+                                holder.progressBarLib.setVisibility(View.VISIBLE);
+                            } else {
+                                holder.progressBarLib.setVisibility(View.INVISIBLE);
+                            }
+                        }
+                    } else {
+                        handleZipOpening(v.getContext(), library.getZipkey(), position, holder);
+                    }
+                }, 500); // Delay in milliseconds (500ms = 0.5 seconds)
             });
-
         }catch (Exception e) {
             Log.d("DB1", "Error: " + e.getMessage());
         }
@@ -194,15 +194,17 @@ public class ZipLibraryAdapter extends RecyclerView.Adapter<ZipLibraryAdapter.Li
         return ZipApplication.getLibraries().size();
     }
 
-    public void handleZipOpening(Context context, String password, int position) {
-
-        Log.d("DB1", "password " + password + " position " + position);
+    public void handleZipOpening(Context context, String password, int position, LibraryViewHolder holder ) {
 
         if (password != null && !password.isEmpty()) {
             ZipApplication.getLibraries().get(position).setZipkey(password);
             notifyItemChanged(position);
         } else {
             // do not start the detail view
+            blockClickListener = false;
+            if (holder.progressBarLib != null) {
+                holder.progressBarLib.setVisibility(View.INVISIBLE);
+            }
             return;
         }
 
@@ -213,15 +215,21 @@ public class ZipLibraryAdapter extends RecyclerView.Adapter<ZipLibraryAdapter.Li
         intent.putExtra("zipkey", ZipApplication.getLibraries().get(position).getZipkey());
         intent.putExtra("position", position);
 
+        blockClickListener=false;
+
         try {
-            // context.startActivity(intent);
             launcher.launch(intent);
         } catch (Exception e) {
             Log.d("DB1", "Error opening ZipFileActivity: " + e.getMessage());
         }
+
+        if (holder.progressBarLib != null) {
+            holder.progressBarLib.setVisibility(View.INVISIBLE);
+        }
+
     }
 
-    public void showPasswordDialog(Context context, int position) {
+    public void showPasswordDialog(Context context, int position, LibraryViewHolder holder) {
 
         // Inflate the custom layout
         LayoutInflater inflater = LayoutInflater.from(context);
@@ -236,7 +244,7 @@ public class ZipLibraryAdapter extends RecyclerView.Adapter<ZipLibraryAdapter.Li
                 .setView(dialogView)
                 .setCancelable(false)  // Prevent dismiss on clicking outside
                 .setPositiveButton("OK", null)  // Temporarily set null
-                .setNegativeButton("Cancel", (d, which) -> d.dismiss())
+                .setNegativeButton("Cancel",null) // Temporarily set null
                 .create();
 
         dialog.show();
@@ -254,54 +262,32 @@ public class ZipLibraryAdapter extends RecyclerView.Adapter<ZipLibraryAdapter.Li
             }
         });
 
+        dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setOnClickListener(view -> {
+            blockClickListener = false;
+            dialog.dismiss();
+        });
+
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
 
-            File tempFile = new File(ZipApplication.getAppContext().getFilesDir(), ZipApplication.getLibraries().get(position).getTarget());
-            if(!tempFile.exists()) {
-                try (InputStream inputStream = context.getAssets().open(ZipApplication.getLibraries().get(position).getSource());
-                     FileOutputStream outputStream = new FileOutputStream(tempFile)) {
-                    byte[] buffer = new byte[1024];
-                    int length;
-                    while ((length = inputStream.read(buffer)) > 0) {
-                        outputStream.write(buffer, 0, length);
-                    }
-                }
-                catch (Exception e){
-                    textViewError.setText(R.string.zip_not_copied_files);
-                    return;
-                }
-            }
+            // copy file from assets to files dir if needed
+            ZipUtilities.copyZipFromAsset(ZipApplication.getLibraries().get(position).getTarget(), ZipApplication.getLibraries().get(position).getSource());
 
             String password = passwordInput.getText().toString();
 
-            if (tempFile.exists()) {
-                try (ZipFile zipFile = new ZipFile(tempFile, password.toCharArray())) {
-                    for (FileHeader fileHeader : zipFile.getFileHeaders()) {
-                        // Attempt to extract
-                        InputStream is = zipFile.getInputStream(fileHeader);
-                        byte[] b = new byte[4 * 4096];
-                        while (is.read(b) != -1) {
-                            // Do nothing as we just want to verify password
-                        }
-                        is.close();
-                        // Exit after the first successful read
-                        break;
-                    }
-                } catch (Exception e) {
-                    textViewError.setText(R.string.password_incorrect);
-                    return;
-                }
+            // verify the password
+            if(!ZipUtilities.isValidZipPassword(ZipApplication.getLibraries().get(position).getTarget(), password )){
+                textViewError.setText(R.string.password_incorrect); // password not valid?
+                return;
             }
-
             dialog.dismiss();  // Dismiss the dialog on successful validation
-            handleZipOpening(context, password, position);
+            handleZipOpening(context, password, position, holder);
         });
-
     }
 
     public static class LibraryViewHolder extends RecyclerView.ViewHolder {
         TextView nameTextView, sourceTextView, fileSizeTextView, fileCountTextView, libraryError, libraryWarning;
         ImageView libraryImageView, lockStateImageView, libraryStateImageview, passwordWarningImageView;
+        ProgressBar progressBarLib;
 
         public LibraryViewHolder(View itemView) {
             super(itemView);
@@ -315,6 +301,7 @@ public class ZipLibraryAdapter extends RecyclerView.Adapter<ZipLibraryAdapter.Li
             lockStateImageView = itemView.findViewById(R.id.imgLockStatus);
             libraryStateImageview = itemView.findViewById(R.id.imgLibraryState);
             passwordWarningImageView = itemView.findViewById(R.id.imgPasswordWarning);
+            progressBarLib = itemView.findViewById(R.id.progressBarLib);
 
         }
     }
