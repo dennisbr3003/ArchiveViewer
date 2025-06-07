@@ -7,13 +7,19 @@ import android.graphics.BitmapFactory;
 import android.media.ThumbnailUtils;
 import android.util.Log;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
 import net.lingala.zip4j.ZipFile;
 import net.lingala.zip4j.model.FileHeader;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Type;
 import java.text.NumberFormat;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -24,11 +30,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 
-public class ZipUtilities {
+public class ZipUtilities implements IZipApplication {
 
     static AssetManager assetManager = ZipApplication.getAppContext().getAssets();
     static String[] assets;
-    static ZipFile zipFile;
+   // static ZipFile zipFile;
 
     public static void initAssetManager() throws IOException {
         assets = assetManager.list("");
@@ -90,8 +96,8 @@ public class ZipUtilities {
     }
     public static ZipLibraryExtraData getZipLibraryExtraData(String target, String source, String zipkey) {
 
-        File tempFile = new File(ZipApplication.getAppContext().getFilesDir(), target);
         ZipLibraryExtraData zipLibraryExtraData = new ZipLibraryExtraData();
+        File tempFile = new File(ZipApplication.getAppContext().getFilesDir(), target);
 
         if(!tempFile.exists()){
             zipLibraryExtraData.setCopied(false);
@@ -229,9 +235,9 @@ public class ZipUtilities {
 
     }
 
-    public static InputStream getImageInputStream(String fileName) {
+    public static InputStream getImageInputStream(String fileName, String target, String zipkey) {
 
-        // ZipFile zipFile = new ZipFile(new File(ZipApplication.getAppContext().getFilesDir(), target), zipkey.toCharArray());
+        ZipFile zipFile = new ZipFile(new File(ZipApplication.getAppContext().getFilesDir(), target), zipkey.toCharArray());
 
         FileHeader fileHeader = null;
 
@@ -253,11 +259,6 @@ public class ZipUtilities {
         }
     }
 
-    public static void setZipFile(ZipFile zFile) {
-        // Perform any necessary validation or setup here
-        zipFile = zFile;
-    }
-
     public static String getFileExtension(String fileName) {
         if (fileName == null || fileName.lastIndexOf('.') == -1) {
             return "UND"; // No extension found
@@ -266,7 +267,21 @@ public class ZipUtilities {
     }
 
     public static List<ZipEntryData> getZipContentsFromAsset(String source, String target, String zipkey) {
+
         List<ZipEntryData> entryDataList = new ArrayList<>();
+        String strData;
+        // first check if we have a saved version for this library, if we have we will use that
+        strData = loadDataFromFile(target, FILE_EXTRA_DIR);
+        if(!strData.isEmpty()){
+            try {
+                entryDataList = jsonToZipEntryDataList(strData);
+                Log.d("DB1", "Extra data retrieved from file " + FILE_EXTRA_DIR + target);
+                return entryDataList;
+            } catch(Exception e) {
+                // something went wrong so we must continue with actually iterating file headers
+                Log.d("DB1", "Extra data was found but could not be retrieved from file " + FILE_EXTRA_DIR + target);
+            }
+        }
 
         Context context = ZipApplication.getAppContext();
 
@@ -277,11 +292,6 @@ public class ZipUtilities {
         // file is copied form assets to files dir where zip4j can reach it. Zip4j cannot read from stream
         // We must now read the contents from the library, assuming we have access for now
         try (ZipFile zipFile = new ZipFile(tempFile, zipkey.toCharArray())) {
-            Log.d("DB1", "zipFile is zip file? " + zipFile.isValidZipFile());
-            Log.d("DB1", "zipFile is encrypted zip file? " + zipFile.isEncrypted());
-            Log.d("DB1", "zipFile is there a password? " + !zipkey.isEmpty());
-
-            setZipFile(zipFile);
 
             for (FileHeader fileHeader : zipFile.getFileHeaders()) {
                 ZipEntryData data = new ZipEntryData(
@@ -290,14 +300,65 @@ public class ZipUtilities {
                         fileHeader.getLastModifiedTimeEpoch()
                 );
                 data.setCacheName(target, String.valueOf(fileHeader.getFileName().hashCode()));
+                data.setCacheFolder(target);
                 entryDataList.add(data);
-                Log.d("DB1", data.toString());
             }
+
+            // got the extra data here, we now save it for quick extraction next time
+            strData = zipEntryDataListToJson(entryDataList); // convert the list to a string
+            saveDataToFile(target, FILE_EXTRA_DIR, strData); // save the string
+            Log.d("DB1", "Extra data saved to file " + FILE_EXTRA_DIR + target);
+
         } catch (Exception e) {
             Log.d("DB1", "Zip file " + source + " could not be read: " + Objects.requireNonNull(e.getMessage()));
         }
 
         return entryDataList;
+    }
+
+    private static void saveDataToFile(String fileName, String folder, String data) {
+
+        File extraDataDir = new File(ZipApplication.getAppContext().getFilesDir(), folder);
+        if (!extraDataDir.exists()) extraDataDir.mkdirs();
+
+        File file = new File(extraDataDir, fileName);
+        try (FileOutputStream fos = new FileOutputStream(file)) {
+            fos.write(data.getBytes());
+            fos.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+            // do nothing, we just have no file that's all
+        }
+    }
+
+    private static String loadDataFromFile(String fileName, String folder) {
+
+        File extraDataDir = new File(ZipApplication.getAppContext().getFilesDir(), folder);
+        File file = new File(extraDataDir, fileName);
+
+        StringBuilder data = new StringBuilder();
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                data.append(line).append("\n");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            // do nothing, just no extra data from file
+        }
+
+        return data.toString().trim();
+    }
+
+    private static String zipEntryDataListToJson(List<ZipEntryData> list) {
+        Gson gson = new Gson();
+        return gson.toJson(list);
+    }
+    private static List<ZipEntryData> jsonToZipEntryDataList(String jsonString) {
+        Gson gson = new Gson();
+        Type listType = new TypeToken<List<ZipEntryData>>() {}.getType();
+        return gson.fromJson(jsonString, listType);
     }
 
 }
