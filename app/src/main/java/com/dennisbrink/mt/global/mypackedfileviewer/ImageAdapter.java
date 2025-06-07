@@ -10,13 +10,13 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.content.res.AppCompatResources;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.GlideException;
 import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.target.Target;
+import com.bumptech.glide.signature.ObjectKey;
 import com.github.chrisbanes.photoview.PhotoView;
 
 import net.lingala.zip4j.ZipFile;
@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.text.MessageFormat;
 import java.util.List;
+import java.util.UUID;
 
 public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ViewHolder> {
     private final List<ZipEntryData> zipEntries;
@@ -88,6 +89,9 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ViewHolder> 
                 .listener(new GlideRequestListener())
                 .placeholder(R.drawable.transparant_placeholder)
                 .error(R.drawable.unsupported)
+                .signature(new ObjectKey(UUID.randomUUID().toString())) // use a signature and keep using cache without the mix ups
+                //.diskCacheStrategy(DiskCacheStrategy.NONE) // Disable disk caching
+                //.skipMemoryCache(true) // Disable memory caching
                 .into(holder.photoView);
 
     }

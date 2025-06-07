@@ -62,9 +62,11 @@ public class ZipLibraryAdapter extends RecyclerView.Adapter<ZipLibraryAdapter.Li
             holder.libraryWarning.setVisibility(View.GONE);
             holder.sourceTextView.setVisibility(View.VISIBLE);
 
-            // check if there is a thumbnail
-            if (thumbnailCache.isThumbnailCached("cache_" + library.getSource().hashCode())) {
-                holder.libraryImageView.setImageBitmap(thumbnailCache.loadThumbnail("cache_" + library.getSource().hashCode()));
+            // check if there is a thumbnail and the lock state. If you have to enter a password manually
+            // it ia assumed sensitive data is in there. A thumbnail may tell an unexpected tail
+            if (!zipLibraryExtraData.getLockState().equals(LockStatus.LOCKED_NO_PASSWORD) &&
+                    thumbnailCache.isThumbnailCached("", "cache_" + library.getSource().hashCode())) {
+                holder.libraryImageView.setImageBitmap(thumbnailCache.loadThumbnail("", "cache_" + library.getSource().hashCode()));
             } else { // otherwise use the placeholder
                 holder.libraryImageView.setImageResource(R.drawable.archive);
             }

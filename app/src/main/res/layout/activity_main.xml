@@ -35,18 +35,28 @@
             android:textStyle="bold" />
 
         <ImageButton
+            android:id="@+id/buttonClearSavedData"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_marginEnd="18dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:paddingTop="1dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/data_clear" />
+
+        <ImageButton
             android:id="@+id/buttonClearCache"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_marginEnd="15dp"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_marginEnd="18dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:scaleType="centerInside"
             android:src="@drawable/toolbar_cache" />
 
         <ImageButton
             android:id="@+id/buttonClose"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:scaleType="centerInside"
             android:src="@drawable/toolbar_close" />

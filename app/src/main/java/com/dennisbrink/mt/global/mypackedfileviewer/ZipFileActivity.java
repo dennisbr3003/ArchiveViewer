@@ -30,18 +30,11 @@ public class ZipFileActivity extends AppCompatActivity {
             @Override
             public void handleOnBackPressed() {
 
-                Log.d("DB1", "Back pressed, setting result and finishing");
+                Intent resultIntent = new Intent(); // Prepare result data
+                resultIntent.putExtra("position", position); // Put the position in the intent extras
+                setResult(RESULT_OK, resultIntent); // Set the result with RESULT_OK or any appropriate result code
 
-                // Prepare result data
-                Intent resultIntent = new Intent();
-                // Put the position in the intent extras
-                resultIntent.putExtra("position", position);
-
-                // Set the result with RESULT_OK or any appropriate result code
-                setResult(RESULT_OK, resultIntent);
-
-                // Finish the activity
-                finish();
+                finish(); // Finish the activity
             }
         });
 
@@ -74,7 +67,7 @@ public class ZipFileActivity extends AppCompatActivity {
             intent.putExtra("source", source);
             intent.putExtra("zipkey", zipkey);
             startActivity(intent);
-        }, source);
+        }, position);
 
         recyclerView.setAdapter(adapter);
 

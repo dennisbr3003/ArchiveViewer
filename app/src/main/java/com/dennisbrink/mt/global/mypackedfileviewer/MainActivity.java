@@ -20,7 +20,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.Objects;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements IZipApplication {
 
     private ZipLibraryAdapter adapter;
     TextView statusBar;
@@ -52,8 +52,14 @@ public class MainActivity extends AppCompatActivity {
         ImageButton buttonClearCache = findViewById(R.id.buttonClearCache);
         buttonClearCache.setOnClickListener(view -> {
             ThumbnailCache thumbnailCache = new ThumbnailCache();
-            thumbnailCache.clearThumbNailCache();
+            thumbnailCache.clearCacheFolder(CACHE_DIR);
             adapter.notifyDataSetChanged(); // this is correct in this case -->  all thumbnails are cleared
+        });
+
+        ImageButton buttonClearSavedData = findViewById(R.id.buttonClearSavedData);
+        buttonClearSavedData.setOnClickListener(view -> {
+            ThumbnailCache thumbnailCache = new ThumbnailCache();
+            thumbnailCache.clearCacheFolder(FILE_EXTRA_DIR); // no effect on thumbnails
         });
 
         RecyclerView recyclerView = findViewById(R.id.recyclerView1);

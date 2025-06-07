@@ -6,7 +6,7 @@ import androidx.annotation.NonNull;
 
 public class ZipEntryData {
     private final String fileName, displayDateTime, displaySize;
-    private String cacheName;
+    private String cacheName, cacheFolder;
     private Bitmap thumbnail;
 
     public Bitmap getThumbnail() {
@@ -39,6 +39,14 @@ public class ZipEntryData {
         this.cacheName = "cache_" + target + filenameHash;
     }
 
+    public String getCacheFolder() {
+        return cacheFolder;
+    }
+
+    public void setCacheFolder(String cacheFolder) {
+        this.cacheFolder = cacheFolder;
+    }
+
     public String getCacheName() {
         return this.cacheName;
     }
@@ -47,9 +55,11 @@ public class ZipEntryData {
     @Override
     public String toString() {
         return "ZipEntryData{" +
-                "fileName='" + fileName + '\'' +
-                ", displayDateTime='" + displayDateTime + '\'' +
+                "cacheFolder='" + cacheFolder + '\'' +
+                ", cacheName='" + cacheName + '\'' +
                 ", displaySize='" + displaySize + '\'' +
+                ", displayDateTime='" + displayDateTime + '\'' +
+                ", fileName='" + fileName + '\'' +
                 '}';
     }
 }
