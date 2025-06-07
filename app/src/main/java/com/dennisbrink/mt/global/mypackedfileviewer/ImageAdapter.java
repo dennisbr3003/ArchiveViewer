@@ -87,9 +87,9 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ViewHolder> 
         Glide.with(holder.photoView.getContext())
                 .load(inputStream)
                 .listener(new GlideRequestListener())
-                .placeholder(R.drawable.transparant_placeholder)
-                .error(R.drawable.unsupported)
-                .signature(new ObjectKey(UUID.randomUUID().toString())) // use a signature and keep using cache without the mix ups
+                //.placeholder(R.drawable.transparent_placeholder) // no placeholder
+                .error(R.drawable.no_image)
+                .signature(new ObjectKey(UUID.randomUUID().toString())) // use a signature and keep using cache without the mix-ups
                 //.diskCacheStrategy(DiskCacheStrategy.NONE) // Disable disk caching
                 //.skipMemoryCache(true) // Disable memory caching
                 .into(holder.photoView);

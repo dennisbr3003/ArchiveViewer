@@ -26,7 +26,7 @@ public class ZipFileAdapter extends RecyclerView.Adapter<ZipFileAdapter.ViewHold
     private final Handler uiHandler = new Handler(Looper.getMainLooper());
     private final List<ZipEntryData> zipEntries;
     ThumbnailCache thumbnailCache = new ThumbnailCache();
-    Bitmap placeholder = BitmapFactory.decodeResource(ZipApplication.getAppContext().getResources(), R.drawable.unsupported_small);
+    Bitmap placeholder = BitmapFactory.decodeResource(ZipApplication.getAppContext().getResources(), R.drawable.no_image_small);
     public interface OnItemClickListener {
         void onItemClick(int position);
     }
