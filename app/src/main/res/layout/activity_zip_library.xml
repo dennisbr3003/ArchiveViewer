@@ -6,14 +6,14 @@
     android:id="@+id/main4"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    tools:context=".ZipLibraryActivity">
 
     <LinearLayout
         android:id="@+id/topBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:layout_marginEnd="16dp"
+        android:layout_marginEnd="8dp"
         android:background="?android:attr/colorBackground"
         android:gravity="center_vertical"
         android:orientation="horizontal"
@@ -31,8 +31,18 @@
             android:paddingStart="8dp"
             android:text="Library Viewer"
             android:textColor="?android:attr/textColorPrimary"
-            android:textSize="24sp"
+            android:textSize="20sp"
             android:textStyle="bold" />
+
+        <ImageButton
+            android:id="@+id/buttonClearTouchpoints"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_marginEnd="18dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:paddingTop="1dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/reset" />
 
         <ImageButton
             android:id="@+id/buttonClearSavedData"
@@ -42,7 +52,7 @@
             android:background="?attr/selectableItemBackgroundBorderless"
             android:paddingTop="1dp"
             android:scaleType="centerInside"
-            android:src="@drawable/data_clear" />
+            android:src="@drawable/sweep" />
 
         <ImageButton
             android:id="@+id/buttonClearCache"
@@ -51,7 +61,7 @@
             android:layout_marginEnd="18dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:scaleType="centerInside"
-            android:src="@drawable/toolbar_cache" />
+            android:src="@drawable/cache" />
 
         <ImageButton
             android:id="@+id/buttonClose"
@@ -59,7 +69,7 @@
             android:layout_height="30dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:scaleType="centerInside"
-            android:src="@drawable/toolbar_close" />
+            android:src="@drawable/close" />
 
     </LinearLayout>
 

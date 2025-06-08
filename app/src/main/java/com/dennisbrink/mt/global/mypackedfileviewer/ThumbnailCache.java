@@ -58,6 +58,7 @@ public class ThumbnailCache implements IZipApplication {
     }
 
     public void clearCacheFolder(String folder) {
+        Log.d("DB1", "Clear folder " + folder);
         File cacheDir = new File(ZipApplication.getAppContext().getFilesDir(), folder);
         if (cacheDir.exists() && cacheDir.isDirectory()) {
             Log.d("DB1", "Cache folder found");

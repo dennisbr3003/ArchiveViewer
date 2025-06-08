@@ -18,9 +18,7 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import java.util.Objects;
-
-public class MainActivity extends AppCompatActivity implements IZipApplication {
+public class ZipLibraryActivity extends AppCompatActivity implements IZipApplication {
 
     private ZipLibraryAdapter adapter;
     TextView statusBar;
@@ -42,7 +40,7 @@ public class MainActivity extends AppCompatActivity implements IZipApplication {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_zip_library);
 
         ImageButton buttonClose = findViewById(R.id.buttonClose);
         buttonClose.setOnClickListener(v -> {
@@ -58,8 +56,16 @@ public class MainActivity extends AppCompatActivity implements IZipApplication {
 
         ImageButton buttonClearSavedData = findViewById(R.id.buttonClearSavedData);
         buttonClearSavedData.setOnClickListener(view -> {
+            Log.d("DB1", "clear saved data");
             ThumbnailCache thumbnailCache = new ThumbnailCache();
             thumbnailCache.clearCacheFolder(FILE_EXTRA_DIR); // no effect on thumbnails
+        });
+
+        ImageButton buttonClearTouchpoints = findViewById(R.id.buttonClearTouchpoints);
+        buttonClearTouchpoints.setOnClickListener(view -> {
+            Log.d("DB1", "clear touch points");
+            ThumbnailCache thumbnailCache = new ThumbnailCache();
+            thumbnailCache.clearCacheFolder(COORDINATE_DIR); // no effect on thumbnails
         });
 
         RecyclerView recyclerView = findViewById(R.id.recyclerView1);

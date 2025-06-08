@@ -71,7 +71,7 @@ public class ZipLibraryAdapter extends RecyclerView.Adapter<ZipLibraryAdapter.Li
                 holder.libraryImageView.setImageResource(R.drawable.archive);
             }
 
-            holder.libraryStateImageview.setImageResource(R.drawable.zipfile_ok);
+            holder.libraryStateImageview.setImageResource(R.drawable.lib_ok);
 
             if (!zipLibraryExtraData.getIsCopied() && zipLibraryExtraData.getInAssets()) {
                 holder.sourceTextView.setVisibility(View.GONE);
@@ -86,7 +86,7 @@ public class ZipLibraryAdapter extends RecyclerView.Adapter<ZipLibraryAdapter.Li
                 holder.libraryError.setVisibility(View.VISIBLE);
                 holder.libraryError.setTextColor(ContextCompat.getColor(holder.itemView.getContext(), R.color.red));
                 holder.libraryError.setText(zipLibraryExtraData.getErrorMessage());
-                holder.libraryStateImageview.setImageResource(R.drawable.zipfile_error);
+                holder.libraryStateImageview.setImageResource(R.drawable.lib_error);
             }
             if (!zipLibraryExtraData.getValidZip() && zipLibraryExtraData.getIsCopied()) {
                 holder.sourceTextView.setVisibility(View.GONE);
@@ -94,25 +94,25 @@ public class ZipLibraryAdapter extends RecyclerView.Adapter<ZipLibraryAdapter.Li
                 holder.libraryError.setVisibility(View.VISIBLE);
                 holder.libraryError.setTextColor(ContextCompat.getColor(holder.itemView.getContext(), R.color.red));
                 holder.libraryError.setText(zipLibraryExtraData.getErrorMessage());
-                holder.libraryStateImageview.setImageResource(R.drawable.zipfile_error);
+                holder.libraryStateImageview.setImageResource(R.drawable.lib_error);
             }
 
             switch (zipLibraryExtraData.getLockState()) {
                 case LOCKED_PASSWORD:
-                    holder.lockStateImageView.setImageResource(R.drawable.lockstate_unlocked);
+                    holder.lockStateImageView.setImageResource(R.drawable.unlocked);
                     break;
                 case LOCKED_NO_PASSWORD:
-                    holder.lockStateImageView.setImageResource(R.drawable.lockstate_locked);
+                    holder.lockStateImageView.setImageResource(R.drawable.locked);
                     break;
                 case NOT_LOCKED:
-                    holder.lockStateImageView.setImageResource(R.drawable.lockstate_nolockstate);
+                    holder.lockStateImageView.setImageResource(R.drawable.nolock);
                     break;
                 case LOCKED_CORRUPTED:
-                    holder.lockStateImageView.setImageResource(R.drawable.lockstate_locked);
+                    holder.lockStateImageView.setImageResource(R.drawable.locked);
                     holder.passwordWarningImageView.setVisibility(View.VISIBLE);
                     break;
                 default:
-                    holder.lockStateImageView.setImageResource(R.drawable.lockstate_unknown);
+                    holder.lockStateImageView.setImageResource(R.drawable.unknown);
                     break;
             }
 
