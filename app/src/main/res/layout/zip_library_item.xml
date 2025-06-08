@@ -116,7 +116,7 @@
                         app:layout_constraintBottom_toBottomOf="parent"
                         app:layout_constraintStart_toStartOf="parent"
                         app:layout_constraintTop_toTopOf="parent"
-                        app:srcCompat="@drawable/zipfile_ok" />
+                        app:srcCompat="@drawable/lib_ok" />
 
                     <ImageView
                         android:id="@+id/imgLockStatus"
@@ -127,7 +127,7 @@
                         app:layout_constraintBottom_toBottomOf="parent"
                         app:layout_constraintStart_toEndOf="@+id/imgLibraryState"
                         app:layout_constraintTop_toTopOf="parent"
-                        app:srcCompat="@drawable/lockstate_locked" />
+                        app:srcCompat="@drawable/locked" />
 
                     <ImageView
                         android:id="@+id/imgPasswordWarning"

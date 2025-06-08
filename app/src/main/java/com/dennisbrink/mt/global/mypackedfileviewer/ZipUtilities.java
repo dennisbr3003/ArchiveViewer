@@ -316,7 +316,7 @@ public class ZipUtilities implements IZipApplication {
         return entryDataList;
     }
 
-    private static void saveDataToFile(String fileName, String folder, String data) {
+    public static void saveDataToFile(String fileName, String folder, String data) {
 
         File extraDataDir = new File(ZipApplication.getAppContext().getFilesDir(), folder);
         if (!extraDataDir.exists()) extraDataDir.mkdirs();
@@ -331,7 +331,7 @@ public class ZipUtilities implements IZipApplication {
         }
     }
 
-    private static String loadDataFromFile(String fileName, String folder) {
+    public static String loadDataFromFile(String fileName, String folder) {
 
         File extraDataDir = new File(ZipApplication.getAppContext().getFilesDir(), folder);
         File file = new File(extraDataDir, fileName);
@@ -359,6 +359,18 @@ public class ZipUtilities implements IZipApplication {
         Gson gson = new Gson();
         Type listType = new TypeToken<List<ZipEntryData>>() {}.getType();
         return gson.fromJson(jsonString, listType);
+    }
+
+    // Convert Coordinates object to JSON
+    public static String coordinatesToJson(Coordinates coordinates) {
+        Gson gson = new Gson();
+        return gson.toJson(coordinates);
+    }
+
+    // Convert JSON to Coordinates object
+    public static Coordinates jsonToCoordinates(String jsonString) {
+        Gson gson = new Gson();
+        return gson.fromJson(jsonString, Coordinates.class);
     }
 
 }

@@ -14,4 +14,7 @@
     <string name="password">Password</string>
     <string name="zip_not_copied_files">Zip file could not be copied to files dir</string>
     <string name="password_incorrect">The password you entered is not correct</string>
+    <string name="nr_of_coordinates">"Nr. of coordinates: "</string>
+    <string name="at_least_one_touch_point_is_required">At least one touch point is required</string>
+    <string name="touchpoints_do_not_match">Touchpoints do not match.</string>
 </resources>
