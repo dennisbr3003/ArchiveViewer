@@ -29,6 +29,7 @@
             android:layout_marginBottom="10dp"
             android:layout_weight="1"
             android:paddingStart="8dp"
+            android:text="Files"
             android:textColor="?android:attr/textColorPrimary"
             android:textSize="20sp"
             android:textStyle="bold" />
@@ -37,7 +38,7 @@
             android:id="@+id/buttonClearAll"
             android:layout_width="30dp"
             android:layout_height="30dp"
-            android:layout_marginEnd="40dp"
+            android:layout_marginEnd="23dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:paddingTop="2dp"
             android:scaleType="centerInside"

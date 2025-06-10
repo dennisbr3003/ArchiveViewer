@@ -3,11 +3,9 @@ package com.dennisbrink.mt.global.mypackedfileviewer;
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
-import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -25,8 +23,9 @@ import java.util.ArrayList;
 public class ImageLoginActivity extends AppCompatActivity implements IZipApplication {
 
     private boolean setCoordinates = false;
+    private boolean verifyCoordinateSave = false;
     private Coordinates coordinates = new Coordinates();
-    private Coordinates coordinatesUser = new Coordinates();
+    private final Coordinates coordinatesUser = new Coordinates();
 
     private ImageView imageTouchable;
     private TextView textViewCoordinates;
@@ -42,134 +41,103 @@ public class ImageLoginActivity extends AppCompatActivity implements IZipApplica
         setContentView(R.layout.activity_image_login);
 
         textViewCoordinates = findViewById(R.id.textViewCoordinates);
+        imageTouchable = findViewById(R.id.imageTouchable);
+        rootLayout = findViewById(R.id.main);
 
         int originalColor = textViewCoordinates.getCurrentTextColor();
 
-
-        imageTouchable = findViewById(R.id.imageTouchable);
-        rootLayout = findViewById(R.id.main);
         // check if there are any coordinates, if there are load them into a Object of type Coordinates
         String coordinatesAsString = ZipUtilities.loadDataFromFile(IZipApplication.COORDINATE_FILENAME, IZipApplication.COORDINATE_DIR);
-        // coordinates = ZipUtilities.jsonToCoordinates(coordinatesAsString); // string is never empty, there is always some initial data as the deviation
+        textViewCoordinates.setTextColor(originalColor);
+        textViewCoordinates.setText("");
 
-        Log.d("DB1", "Coordinates found ? " + (!coordinatesAsString.isEmpty()));
-        if(coordinatesAsString.isEmpty()){
-            setCoordinates = true;
-            textViewCoordinates.setTextColor(originalColor);
-            textViewCoordinates.setText(String.format("%s%d", getString(R.string.nr_of_coordinates), coordinates.getCoordinates().size()));
+        if(coordinatesAsString.isEmpty()){ // this is almost never only at startup and after deletion
+            setCoordinates = true; // we are setting a touch point sequence
         } else {
-            Log.d("DB1", "coordinates: " + coordinatesAsString);
-            // load this string into it's object structure
-            coordinates = ZipUtilities.jsonToCoordinates(coordinatesAsString);
+            coordinates = ZipUtilities.jsonToCoordinates(coordinatesAsString); // load this string into it's object structure
             if (coordinates.getCoordinates().isEmpty()) {
-                setCoordinates = true;
-                textViewCoordinates.setTextColor(originalColor);
-                textViewCoordinates.setText(String.format("%s%d", getString(R.string.nr_of_coordinates), coordinates.getCoordinates().size()));
-            } else {
-                textViewCoordinates.setText("");
+                setCoordinates = true; // we are setting a touch point sequence
             }
         }
 
+        // image touch listener
         imageTouchable.setOnTouchListener((view, motionEvent) -> {
+
             if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
+                textViewCoordinates.setTextColor(originalColor);
+                if (setCoordinates) {
+                    textViewCoordinates.setText(R.string.new_personal_sequence);
+                } else { // regular entry of touch points
+                    if(verifyCoordinateSave) { // verification after new sequence
+                        textViewCoordinates.setText(R.string.verify_personal_sequence);
+                    } else {
+                        textViewCoordinates.setText(R.string.personal_sequence_go);
+                    }
+                }
                 float x = motionEvent.getX();
                 float y = motionEvent.getY();
-                Log.d("DB1", "Coordinates x: " + x + " y: " + y);
                 Coordinate coordinate = new Coordinate((int) x, (int) y);
-                try {
-                    if(setCoordinates) {
-                        coordinates.getCoordinates().add(coordinate);
-                        textViewCoordinates.setTextColor(originalColor);
-                        textViewCoordinates.setText(String.format("%s%d", getString(R.string.nr_of_coordinates), coordinates.getCoordinates().size()));
-                    } else {
-                        coordinatesUser.getCoordinates().add(coordinate);
-                        textViewCoordinates.setTextColor(originalColor);
-                        textViewCoordinates.setText(String.format("%s%d", "Number of user coordinates: ", coordinatesUser.getCoordinates().size()));
 
-                    }
-                } catch(Exception e) {
-                    Log.d("DB1", "coordinate not added: " + e.getMessage());
-                }
-                try {
-                    addTouchMarker(x, y);
-                } catch(Exception e){
-                    Log.d("DB1", "Error placing marker : " + e.getMessage());
-                }
+                textViewCoordinates.setTextColor(originalColor);
+
+                if(setCoordinates) coordinates.getCoordinates().add(coordinate);
+                else coordinatesUser.getCoordinates().add(coordinate);
+
+                addTouchMarker(x, y);
             }
             return true; // Return true to indicate the event was handled
+
         });
 
         ImageButton buttonGo = findViewById(R.id.imageButtonGo);
         buttonGo.setOnClickListener(view -> {
-            // check if the checkpoints are complete
-            Log.d("DB1", "user entered touch points ? " +  !coordinatesUser.getCoordinates().isEmpty());
-            Log.d("DB1", "Are there saved touch points ? " +  !coordinates.getCoordinates().isEmpty());
 
-            if(coordinatesUser.getCoordinates().isEmpty()){
-                // not correct, you cannot have 0 touch points
+            // check if the checkpoints are complete
+            if(coordinatesUser.getCoordinates().isEmpty()){ // not correct, you cannot have 0 touch points
                 textViewCoordinates.setTextColor(getResources().getColor(R.color.red, null));
                 textViewCoordinates.setText(R.string.at_least_one_touch_point_is_required);
                 return;
             }
+
+            // check if the sizes match, a first simple check
             if(coordinatesUser.getCoordinates().size() != coordinates.getCoordinates().size()){
                 textViewCoordinates.setTextColor(getResources().getColor(R.color.red, null));
                 textViewCoordinates.setText(R.string.touchpoints_do_not_match);
-                // clear markers, and the coordinates the user entered
-                coordinatesUser.setCoordinates(new ArrayList<>());
+                coordinatesUser.setCoordinates(new ArrayList<>()); // clear markers, and the coordinates the user entered
                 removeAllMarkers();
                 return;
             }
 
-            // check the proximity and order of the entered touch points using the deviation,
-            // I need the index, hence a traditional loop
+            // check the proximity and order of the entered touch points using the deviation, I need the index, hence a traditional loop
             for (int i = 0; i < coordinatesUser.getCoordinates().size(); i++) {
-                // You have access to the index 'i' here
-                // Do something with the index or the coordinate
                 Coordinate coordinate = coordinatesUser.getCoordinates().get(i);
-                if ((coordinate.getX() >= (coordinates.getCoordinates().get(i).getX()) - coordinates.getDeviation() &&
-                     coordinate.getX() <= (coordinates.getCoordinates().get(i).getX()) + coordinates.getDeviation()) &&
-                    (coordinate.getY() >= (coordinates.getCoordinates().get(i).getY()) - coordinates.getDeviation() &&
-                     coordinate.getY() <= (coordinates.getCoordinates().get(i).getY()) + coordinates.getDeviation())) {
-                    Log.d("DB1", "Coordinate X user " + coordinate.getX());
-                    Log.d("DB1", " is in between " + (coordinates.getCoordinates().get(i).getX() - coordinates.getDeviation()));
-                    Log.d("DB1", " and " + (coordinates.getCoordinates().get(i).getX() + coordinates.getDeviation()));
-                    Log.d("DB1", "Coordinate Y user " + coordinate.getY());
-                    Log.d("DB1", " is in between " + (coordinates.getCoordinates().get(i).getY() - coordinates.getDeviation()));
-                    Log.d("DB1", " and " + (coordinates.getCoordinates().get(i).getY() + coordinates.getDeviation()));
-                }
-                else {
-                    // not good we are not close enough
+                if  (!((coordinate.getX() >= (coordinates.getCoordinates().get(i).getX()) - coordinates.getDeviation() &&
+                        coordinate.getX() <= (coordinates.getCoordinates().get(i).getX()) + coordinates.getDeviation()) &&
+                       (coordinate.getY() >= (coordinates.getCoordinates().get(i).getY()) - coordinates.getDeviation() &&
+                        coordinate.getY() <= (coordinates.getCoordinates().get(i).getY()) + coordinates.getDeviation()))) {
                     textViewCoordinates.setTextColor(getResources().getColor(R.color.red, null));
                     textViewCoordinates.setText(R.string.touchpoints_do_not_match);
-                    // clear markers, and the coordinates the user entered
-                    coordinatesUser.setCoordinates(new ArrayList<>());
+                    coordinatesUser.setCoordinates(new ArrayList<>()); // clear markers, and the coordinates the user entered, the user must restart without any clue
                     removeAllMarkers();
                     return;
                 }
             }
 
             Intent intent = new Intent(ImageLoginActivity.this, ZipLibraryActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK); // do not use this activity in the stack
             startActivity(intent);
         });
 
         ImageButton buttonUndo = findViewById(R.id.imageButtonUndo);
         buttonUndo.setOnClickListener(view -> {
-            // clear coordinates
-            coordinates.setCoordinates(new ArrayList<>());
-            removeAllMarkers();
-            textViewCoordinates.setTextColor(originalColor);
-            textViewCoordinates.setText(String.format("%s%d", getString(R.string.nr_of_coordinates), coordinates.getCoordinates().size()));
+            coordinates.setCoordinates(new ArrayList<>()); // clear coordinates
+            removeAllMarkers(); // clear markers. Any text remains the same
         });
 
         ImageButton buttonCheckOk = findViewById(R.id.imageButtonCheckOk);
         buttonCheckOk.setOnClickListener(view -> {
 
-            Log.d("DB1", "user entered touch points ? " +  coordinatesUser.getCoordinates().isEmpty());
-            Log.d("DB1", "Are there saved touch points ? " +  coordinatesUser.getCoordinates().isEmpty());
-
-            if(coordinates.getCoordinates().isEmpty()){
-                // not correct, you cannot have 0 touch points
+            if(coordinates.getCoordinates().isEmpty()){  // not correct, you cannot have 0 touch points
                 textViewCoordinates.setTextColor(getResources().getColor(R.color.red, null));
                 textViewCoordinates.setText(R.string.at_least_one_touch_point_is_required);
                 return;
@@ -180,16 +148,21 @@ public class ImageLoginActivity extends AppCompatActivity implements IZipApplica
             buttonUndo.setVisibility(View.GONE);
             buttonCheckOk.setVisibility(View.GONE);
             buttonGo.setVisibility(View.VISIBLE);
-            // reload everything her because we need to verify if coordinates match
-            // textViewCoordinates.setVisibility(View.INVISIBLE);
+
+            // reload everything here because we need to verify if coordinates match
             removeAllMarkers();
             setCoordinates = false; // not setting anymore, points are saved
-            textViewCoordinates.setText("");
+            verifyCoordinateSave = true;
+            textViewCoordinates.setText(R.string.verify_personal_sequence);
+
         });
 
+        // init buttons on load of this activity, depending on if coordinates being set or entered
         if(setCoordinates) {
             buttonGo.setVisibility(View.GONE);
+            textViewCoordinates.setText(R.string.new_personal_sequence);
         } else {
+            textViewCoordinates.setText(R.string.personal_sequence_go);
             buttonUndo.setVisibility(View.GONE);
             buttonCheckOk.setVisibility(View.GONE);
         }
@@ -210,7 +183,7 @@ public class ImageLoginActivity extends AppCompatActivity implements IZipApplica
 
         // Set a unique ID for the marker view
         markerView.setId(View.generateViewId());
-        markerView.setTag("marker");
+        markerView.setTag(getString(R.string.marker));
 
         rootLayout.addView(markerView);
 
@@ -246,7 +219,7 @@ public class ImageLoginActivity extends AppCompatActivity implements IZipApplica
     private void removeAllMarkers() {
         for (int i = rootLayout.getChildCount() - 1; i >= 0; i--) {
             View child = rootLayout.getChildAt(i);
-            if ("marker".equals(child.getTag())) {
+            if (ZipApplication.getAppContext().getResources().getString(R.string.marker).equals(child.getTag())) {
                 rootLayout.removeView(child);
             }
         }
