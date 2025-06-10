@@ -2,9 +2,11 @@ package com.dennisbrink.mt.global.mypackedfileviewer;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import androidx.activity.EdgeToEdge;
@@ -44,7 +46,29 @@ public class ZipLibraryActivity extends AppCompatActivity implements IZipApplica
 
         ImageButton buttonClose = findViewById(R.id.buttonClose);
         buttonClose.setOnClickListener(v -> {
-            finish(); // Close the activity
+            finishAffinity(); // Close all the activities and close the app
+        });
+
+        ImageButton buttonClearAll = findViewById(R.id.buttonClearAll);
+        buttonClearAll.setOnClickListener(view -> {
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(view.getContext());
+
+            builder.setTitle(R.string.confirm_deletion_title);
+            builder.setMessage(R.string.sure_to_delete_app_data);
+
+            builder.setPositiveButton("Yes", (dialog, which) -> {
+                ThumbnailCache thumbnailCache = new ThumbnailCache();
+                thumbnailCache.clearAll();
+                adapter.notifyDataSetChanged(); // this is correct in this case -->  all data is deleted
+            });
+
+            builder.setNegativeButton("No", (dialog, which) -> {
+                dialog.dismiss();
+            });
+
+            AlertDialog dialog = builder.create();
+            dialog.show();
         });
 
         ImageButton buttonClearCache = findViewById(R.id.buttonClearCache);
