@@ -17,11 +17,14 @@
     <string name="nr_of_coordinates">"Nr. of coordinates: "</string>
     <string name="at_least_one_touch_point_is_required">At least one touch point is required for a sequence</string>
     <string name="touchpoints_do_not_match">Touch point sequence does not match.</string>
-    <string name="sure_to_delete_app_data">Are you sure you want to delete all app data, thumbnails, archives, and touch points? This action cannot be undone.</string>
+    <string name="textmessage_delete_app_data">Are you sure you want to delete all app data, thumbnails, local copies of archives and touch points? This action cannot be undone.</string>
     <string name="confirm_deletion_title">Confirm Deletion</string>
     <string name="files_comma">" files, "</string>
     <string name="new_personal_sequence">Please enter your personal touch point sequence and click \'check\' to save</string>
     <string name="personal_sequence_go">Please enter your personal touch point sequence and click \'go\' to proceed</string>
     <string name="verify_personal_sequence">Please re-enter the touch point sequence for verification and click \'go\'</string>
     <string name="marker">marker</string>
+    <string name="textmessage_delete_touch_point_sequence">Are you sure you want to delete the touch point sequence? You will remain logged in but you will have to enter a new sequence the next time you start or resume the app.</string>
+    <string name="textmessage_delete_extra_data">Are you sure you want to delete all extra generated data, this will cause the data to be regenerated which may produce a performance hick-up</string>
+    <string name="textmessage_delete_cached_data">Are you sure you want to delete all thumbnails, this will cause the thumbnails to be regenerated which may produce a performance hick-up</string>
 </resources>
