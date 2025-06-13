@@ -10,6 +10,7 @@ public class ZipDialogs implements IZipApplication {
 
         builder.setTitle(title);
         builder.setMessage(text);
+        builder.setIcon(R.drawable.confirm_delete);
 
         builder.setPositiveButton("Yes", (dialog, which) -> {
             // we send "yes" to the receiver
