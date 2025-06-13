@@ -2,14 +2,13 @@ package com.dennisbrink.mt.global.mypackedfileviewer;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
+import android.view.WindowManager;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import androidx.activity.EdgeToEdge;
@@ -47,6 +46,14 @@ public class ZipLibraryActivity extends AppCompatActivity implements IZipApplica
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_zip_library);
+
+        // What FLAG_SECURE Does:
+        // Prevents Screenshots: Blocks the screen from being captured or recorded.
+        // Hides in Recents: Prevents your app’s contents from appearing in the recent apps preview.
+        // Limitations
+        // Visibility: This flag doesn't display a custom view but effectively obscures the screen by
+        // preventing its display in the ways mentioned above.
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE);
 
         ImageButton buttonClose = findViewById(R.id.buttonClose);
         buttonClose.setOnClickListener(v -> {
@@ -93,7 +100,7 @@ public class ZipLibraryActivity extends AppCompatActivity implements IZipApplica
             );
         });
 
-        RecyclerView recyclerView = findViewById(R.id.recyclerView1);
+        RecyclerView recyclerView = findViewById(R.id.recyclerViewZipLibrary);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
         statusBar = findViewById(R.id.statusBar);
@@ -103,7 +110,7 @@ public class ZipLibraryActivity extends AppCompatActivity implements IZipApplica
 
         setStatusBarText();
 
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main4), (v, insets) -> {
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.constraintLayoutZipLibrary), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
@@ -149,7 +156,10 @@ public class ZipLibraryActivity extends AppCompatActivity implements IZipApplica
         if(receiver == null){
             Log.d("DB1", "ZipLibraryActivity.class: (onResume) Registering receiver");
             receiver = new Receiver();
-            receiver.setZipLibraryActivity(this); // polymorphism --> the class is of type IZipLibraryActivityListener
+            // Make yourself known to the receiver. This way the receiver will know this activity exists
+            // and will be able to run any of the methods connected to the actions registered
+            // This uses polymorphism --> the class is of type IZipLibraryActivityListener
+            receiver.setZipLibraryActivity(this);
         }
         this.registerReceiver(receiver, getFilter(), Context.RECEIVER_EXPORTED);
     }
