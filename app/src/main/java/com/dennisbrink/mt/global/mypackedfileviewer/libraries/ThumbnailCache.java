@@ -1,8 +1,12 @@
-package com.dennisbrink.mt.global.mypackedfileviewer;
+package com.dennisbrink.mt.global.mypackedfileviewer.libraries;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.util.Log;
+
+import com.dennisbrink.mt.global.mypackedfileviewer.IZipApplication;
+import com.dennisbrink.mt.global.mypackedfileviewer.ZipApplication;
+import com.dennisbrink.mt.global.mypackedfileviewer.structures.ZipLibrary;
 
 import java.io.File;
 import java.io.FileOutputStream;

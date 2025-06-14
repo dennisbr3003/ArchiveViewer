@@ -1,4 +1,4 @@
-package com.dennisbrink.mt.global.mypackedfileviewer;
+package com.dennisbrink.mt.global.mypackedfileviewer.structures;
 
 import java.util.ArrayList;
 import java.util.List;

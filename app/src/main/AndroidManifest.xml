@@ -26,12 +26,6 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".ZipContentViewerActivity"
-            android:exported="false" />
-        <activity
-            android:name=".ZipFileActivity"
-            android:exported="false" />
-        <activity
             android:name=".ZipLibraryActivity"
             android:exported="false" />
     </application>

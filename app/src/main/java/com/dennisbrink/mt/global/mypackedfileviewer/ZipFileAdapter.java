@@ -14,6 +14,10 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.dennisbrink.mt.global.mypackedfileviewer.libraries.ThumbnailCache;
+import com.dennisbrink.mt.global.mypackedfileviewer.libraries.ZipUtilities;
+import com.dennisbrink.mt.global.mypackedfileviewer.structures.ZipEntryData;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -21,7 +25,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class ZipFileAdapter extends RecyclerView.Adapter<ZipFileAdapter.ViewHolder> {
-    private final String libraryName, libraryTarget, libraryZipKey, librarySource;
+    private final String libraryTarget, libraryZipKey, librarySource;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private final Handler uiHandler = new Handler(Looper.getMainLooper());
     private final List<ZipEntryData> zipEntries;
@@ -36,7 +40,6 @@ public class ZipFileAdapter extends RecyclerView.Adapter<ZipFileAdapter.ViewHold
     public ZipFileAdapter(List<ZipEntryData> zipEntries, OnItemClickListener listener, int libraryPosition) {
         this.zipEntries = zipEntries;
         this.listener = listener;
-        this.libraryName = ZipApplication.getLibraries().get(libraryPosition).getName();
         this.libraryTarget = ZipApplication.getLibraries().get(libraryPosition).getTarget();
         this.libraryZipKey = ZipApplication.getLibraries().get(libraryPosition).getZipkey();
         this.librarySource = ZipApplication.getLibraries().get(libraryPosition).getSource();
@@ -58,7 +61,7 @@ public class ZipFileAdapter extends RecyclerView.Adapter<ZipFileAdapter.ViewHold
                 if (listener != null) {
                     int position = getAbsoluteAdapterPosition();
                     if (position != RecyclerView.NO_POSITION) {
-                        listener.onItemClick(position); // this will launch ZipContentViewerActivity.class (listener from ZipFileActivity)
+                            listener.onItemClick(position); // this will launch fragment FragmentZipLibraryFile (view one file in a recyclerView)
                     }
                 }
             });
@@ -92,14 +95,14 @@ public class ZipFileAdapter extends RecyclerView.Adapter<ZipFileAdapter.ViewHold
                                 thumbnailCache.saveThumbnail("", "cache_" + this.librarySource.hashCode(), thumbnail);
                             }
                         } catch (IOException e) {
-                            Log.d("DB1", "Saving the thumbnail to the app's files folder failed " + e.getMessage());
+                            Log.d("DB1", "ZipFileAdapter.onBindViewHolder: Saving the thumbnail to the app's files folder failed " + e.getMessage());
                         }
                         entryData.setThumbnail(thumbnail);
 
                         // Update the UI on the main thread using Handler
                         uiHandler.post(() -> holder.thumbNail.setImageBitmap(entryData.getThumbnail()));
                     } else {
-                        Log.d("DB1", "InputStream was null for file: " + entryData.getFileName());
+                        Log.d("DB1", "ZipFileAdapter.onBindViewHolder: InputStream was null for file: " + entryData.getFileName());
                     }
                 });
             } else {

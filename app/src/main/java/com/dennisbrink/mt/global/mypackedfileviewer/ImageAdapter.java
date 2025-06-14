@@ -17,6 +17,8 @@ import com.bumptech.glide.load.engine.GlideException;
 import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.target.Target;
 import com.bumptech.glide.signature.ObjectKey;
+import com.dennisbrink.mt.global.mypackedfileviewer.libraries.ZipUtilities;
+import com.dennisbrink.mt.global.mypackedfileviewer.structures.ZipEntryData;
 import com.github.chrisbanes.photoview.PhotoView;
 
 import net.lingala.zip4j.ZipFile;

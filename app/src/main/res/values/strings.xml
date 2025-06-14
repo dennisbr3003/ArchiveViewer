@@ -27,5 +27,5 @@
     <string name="textmessage_delete_touch_point_sequence">Are you sure you want to delete the touch point sequence? You will remain logged in but you will have to enter a new sequence the next time you start or resume the app.</string>
     <string name="textmessage_delete_extra_data">Are you sure you want to delete all extra generated data, this will cause the data to be regenerated which may produce a performance hick-up</string>
     <string name="textmessage_delete_cached_data">Are you sure you want to delete all thumbnails, this will cause the thumbnails to be regenerated which may produce a performance hick-up</string>
-    <string name="nothing_to_see_here">Nothing to see here...</string>
+    <string name="file_summary">%1$d files, %2$s KB</string>
 </resources>

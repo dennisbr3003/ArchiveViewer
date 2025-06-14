@@ -1,4 +1,4 @@
-package com.dennisbrink.mt.global.mypackedfileviewer;
+package com.dennisbrink.mt.global.mypackedfileviewer.libraries;
 
 import android.content.Context;
 import android.content.res.AssetManager;
@@ -7,6 +7,13 @@ import android.graphics.BitmapFactory;
 import android.media.ThumbnailUtils;
 import android.util.Log;
 
+import com.dennisbrink.mt.global.mypackedfileviewer.IZipApplication;
+import com.dennisbrink.mt.global.mypackedfileviewer.LockStatus;
+import com.dennisbrink.mt.global.mypackedfileviewer.R;
+import com.dennisbrink.mt.global.mypackedfileviewer.ZipApplication;
+import com.dennisbrink.mt.global.mypackedfileviewer.structures.Coordinates;
+import com.dennisbrink.mt.global.mypackedfileviewer.structures.ZipEntryData;
+import com.dennisbrink.mt.global.mypackedfileviewer.structures.ZipLibraryExtraData;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -209,7 +216,7 @@ public class ZipUtilities implements IZipApplication {
     }
 
     public static Bitmap createThumbnail(InputStream inputStream, int width, int height, Bitmap placeholder) {
-        long startTime = System.currentTimeMillis();
+
         Bitmap thumbnail = null;
 
         try {
@@ -221,15 +228,11 @@ public class ZipUtilities implements IZipApplication {
                 // Create the thumbnail
                 thumbnail = ThumbnailUtils.extractThumbnail(originalBitmap, width, height);
             } else {
-                Log.d("DB1", "Decoding failed: Unsupported file format or corrupt image.");
+                Log.d("DB1", "ZipUtilities.createThumbnail: Decoding failed: Unsupported file format or corrupt image.");
             }
         } catch (Exception e) {
-            Log.d("DB1", "Thumbnail generation failed: " + e.getMessage());
+            Log.d("DB1", "ZipUtilities.createThumbnail: Thumbnail generation failed: " + e.getMessage());
         }
-
-        long endTime = System.currentTimeMillis();
-        long executionTime = endTime - startTime;
-        Log.d("DB1", "Execution time thumbnail generation: " + executionTime + " ms");
 
         return thumbnail != null ? thumbnail : placeholder;
 
@@ -245,11 +248,10 @@ public class ZipUtilities implements IZipApplication {
         try {
             fileHeader = zipFile.getFileHeader(fileName);
         } catch(Exception e) {
-            Log.d("DB1", Objects.requireNonNull(e.getMessage()));
+            Log.d("DB1", "ZipUtilities.getImageInputStream: " + e.getMessage());
         }
 
         assert fileHeader != null;
-        Log.d("DB1", fileHeader.getFileName());
 
         // Create an InputStream from the zip entry
         try {
@@ -275,11 +277,11 @@ public class ZipUtilities implements IZipApplication {
         if(!strData.isEmpty()){
             try {
                 entryDataList = jsonToZipEntryDataList(strData);
-                Log.d("DB1", "Extra data retrieved from file " + FILE_EXTRA_DIR + target);
+                Log.d("DB1", "ZipUtilities.getZipContentsFromAsset: Extra data retrieved from file " + FILE_EXTRA_DIR + target);
                 return entryDataList;
             } catch(Exception e) {
                 // something went wrong so we must continue with actually iterating file headers
-                Log.d("DB1", "Extra data was found but could not be retrieved from file " + FILE_EXTRA_DIR + target);
+                Log.d("DB1", "ZipUtilities.getZipContentsFromAsset: Extra data was found but could not be retrieved from file " + FILE_EXTRA_DIR + target);
             }
         }
 
@@ -307,10 +309,10 @@ public class ZipUtilities implements IZipApplication {
             // got the extra data here, we now save it for quick extraction next time
             strData = zipEntryDataListToJson(entryDataList); // convert the list to a string
             saveDataToFile(target, FILE_EXTRA_DIR, strData); // save the string
-            Log.d("DB1", "Extra data saved to file " + FILE_EXTRA_DIR + target);
+            Log.d("DB1", "ZipUtilities.getZipContentsFromAsset: Extra data saved to file " + FILE_EXTRA_DIR + target);
 
         } catch (Exception e) {
-            Log.d("DB1", "Zip file " + source + " could not be read: " + Objects.requireNonNull(e.getMessage()));
+            Log.d("DB1", "ZipUtilities.getZipContentsFromAsset: Zip file " + source + " could not be read -> " + e.getMessage());
         }
 
         return entryDataList;
@@ -326,8 +328,8 @@ public class ZipUtilities implements IZipApplication {
             fos.write(data.getBytes());
             fos.flush();
         } catch (IOException e) {
-            e.printStackTrace();
             // do nothing, we just have no file that's all
+            Log.d("DB1", "ZipUtilities.saveDataToFile: Non lethal error saving data -> " + e.getMessage());
         }
     }
 
@@ -344,8 +346,8 @@ public class ZipUtilities implements IZipApplication {
                 data.append(line).append("\n");
             }
         } catch (IOException e) {
-            e.printStackTrace();
             // do nothing, just no extra data from file
+            Log.d("DB1", "ZipUtilities.loadDataFromFile: Non lethal error loading data -> " + e.getMessage());
         }
 
         return data.toString().trim();
