@@ -36,8 +36,11 @@ public class ZipLibraryActivity extends AppCompatActivity  {
     }
 
     @Override
-    protected void onPause() {
-        super.onPause();
-        finishAffinity();
+    protected void onStop() {
+        super.onStop();
+        if (!isChangingConfigurations() && !isFinishing()) {
+            finishAffinity();
+        }
     }
+
 }

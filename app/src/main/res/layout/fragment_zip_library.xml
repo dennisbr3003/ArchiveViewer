@@ -2,78 +2,76 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/main2"
+    android:id="@+id/constraintLayoutLibrary"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="16dp">
 
-    <ImageView
-        android:id="@+id/imageView"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="24dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/archive" />
-
-    <TextView
-        android:id="@+id/targetTextView"
-        android:layout_width="wrap_content"
+    <!-- HEADER GROUP STARTS HERE -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/headerLayout"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="24dp"
-        android:text="Target"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        app:layout_constraintStart_toEndOf="@+id/imageView"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <TextView
-        android:id="@+id/targetNumEntries"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="18dp"
-        android:text="7"
-        android:textSize="10sp"
-        app:layout_constraintStart_toEndOf="@+id/imageView"
-        app:layout_constraintTop_toBottomOf="@+id/targetTextView" />
-
-    <ImageButton
-        android:id="@+id/imageButtonClose"
-        android:layout_width="30dp"
-        android:layout_height="30dp"
-        android:layout_marginTop="24dp"
-        android:layout_marginEnd="24dp"
-        android:background="?attr/selectableItemBackgroundBorderless"
-        android:scaleType="centerInside"
+        android:layout_marginTop="8dp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/close" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
 
-    <ImageButton
-        android:id="@+id/imageButtonUp"
-        android:layout_width="30dp"
-        android:layout_height="30dp"
-        android:layout_marginTop="24dp"
-        android:layout_marginEnd="24dp"
-        android:background="?attr/selectableItemBackgroundBorderless"
-        android:scaleType="centerInside"
-        app:layout_constraintEnd_toStartOf="@+id/imageButtonClose"
-        app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/up" />
+        <ImageView
+            android:id="@+id/imageViewLibrary"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="16dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@drawable/archive" />
 
-    <ImageButton
-        android:id="@+id/imageButtonDown"
-        android:layout_width="30dp"
-        android:layout_height="30dp"
-        android:layout_marginTop="24dp"
-        android:layout_marginEnd="8dp"
-        android:background="?attr/selectableItemBackgroundBorderless"
-        android:scaleType="centerInside"
-        app:layout_constraintEnd_toStartOf="@+id/imageButtonUp"
-        app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/down" />
+        <TextView
+            android:id="@+id/targetTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:text="Target"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toEndOf="@id/imageViewLibrary"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/targetNumEntries"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="18dp"
+            android:text="7"
+            android:textSize="10sp"
+            app:layout_constraintStart_toEndOf="@id/imageViewLibrary"
+            app:layout_constraintTop_toBottomOf="@id/targetTextView" />
+
+        <ImageButton
+            android:id="@+id/imageButtonUp"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="8dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:scaleType="centerInside"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@drawable/up" />
+
+        <ImageButton
+            android:id="@+id/imageButtonDown"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="16dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:scaleType="centerInside"
+            app:layout_constraintEnd_toStartOf="@id/imageButtonUp"
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@drawable/down" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+    <!-- HEADER GROUP ENDS HERE -->
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerViewZipLibraryFiles"
@@ -81,8 +79,10 @@
         android:layout_height="0dp"
         android:layout_marginTop="16dp"
         android:paddingBottom="16dp"
-        app:layout_constraintTop_toBottomOf="@+id/targetNumEntries"
-        tools:layout_editor_absoluteX="16dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/headerLayout"
         tools:listitem="@layout/zip_entry_item" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

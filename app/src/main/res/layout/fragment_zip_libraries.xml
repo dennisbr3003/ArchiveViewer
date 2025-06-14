@@ -10,7 +10,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:layout_marginEnd="8dp"
         android:background="?android:attr/colorBackground"
         android:gravity="center_vertical"
         android:orientation="horizontal"
@@ -26,7 +25,7 @@
             android:layout_marginBottom="10dp"
             android:layout_weight="1"
             android:paddingStart="8dp"
-            android:text="Files"
+            android:text="Archives"
             android:textColor="?android:attr/textColorPrimary"
             android:textSize="20sp"
             android:textStyle="bold" />
@@ -65,18 +64,10 @@
             android:id="@+id/buttonClearCache"
             android:layout_width="30dp"
             android:layout_height="30dp"
-            android:layout_marginEnd="40dp"
+            android:layout_marginEnd="16dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:scaleType="centerInside"
             android:src="@drawable/cache" />
-
-        <ImageButton
-            android:id="@+id/buttonClose"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:scaleType="centerInside"
-            android:src="@drawable/close" />
 
     </LinearLayout>
 

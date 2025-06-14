@@ -40,10 +40,10 @@ public class FragmentZipLibraries extends Fragment implements IZipApplication, I
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view =  inflater.inflate(R.layout.fragment_zip_libraries, container, false);
 
-        ImageButton buttonClose = view.findViewById(R.id.buttonClose);
-        buttonClose.setOnClickListener(v -> {
-            requireActivity().finishAffinity(); // Close all the activities and close the app
-        });
+//        ImageButton buttonClose = view.findViewById(R.id.buttonClose);
+//        buttonClose.setOnClickListener(v -> {
+//            requireActivity().finishAffinity(); // Close all the activities and close the app
+//        });
 
         ImageButton buttonClearAll = view.findViewById(R.id.buttonClearAll);
         buttonClearAll.setOnClickListener(v -> {
