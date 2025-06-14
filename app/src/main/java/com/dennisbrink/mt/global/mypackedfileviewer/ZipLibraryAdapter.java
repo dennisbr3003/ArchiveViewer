@@ -29,13 +29,14 @@ import com.dennisbrink.mt.global.mypackedfileviewer.structures.ZipLibraryExtraDa
 import net.lingala.zip4j.ZipFile;
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class ZipLibraryAdapter extends RecyclerView.Adapter<ZipLibraryAdapter.LibraryViewHolder> {
 
     ThumbnailCache thumbnailCache = new ThumbnailCache();
     private boolean blockClickListener = false;
     private boolean showDialog = false;
-    private FragmentActivity activity;
+    private final FragmentActivity activity;
     public ZipLibraryAdapter(FragmentActivity activity) {
         this.activity = activity;
     }
@@ -50,6 +51,10 @@ public class ZipLibraryAdapter extends RecyclerView.Adapter<ZipLibraryAdapter.Li
 
     @Override
     public void onBindViewHolder(@NonNull LibraryViewHolder holder, int position) {
+
+        // Atomic because it is being updates in a handler
+        AtomicReference<Boolean> zipFileIsEncrypted = new AtomicReference<>(false);
+
         try {
 
             ZipLibrary library = ZipApplication.getLibraries().get(position);
@@ -163,6 +168,7 @@ public class ZipLibraryAdapter extends RecyclerView.Adapter<ZipLibraryAdapter.Li
                         try (ZipFile zipFile = new ZipFile(tempFile)) {
                             if (zipFile.isValidZipFile()) {
                                 if (zipFile.isEncrypted()) {
+                                    zipFileIsEncrypted.set(true);
                                     // encrypted library but no password so we need user input here
                                     if (ZipApplication.getLibraries().get(position).getZipkey().isEmpty())
                                         showDialog = true; // valid zip file no password
@@ -187,7 +193,7 @@ public class ZipLibraryAdapter extends RecyclerView.Adapter<ZipLibraryAdapter.Li
                             }
                         }
                     } else {
-                        handleZipOpening(v.getContext(), library.getZipkey(), position, holder);
+                        handleZipOpening(library.getZipkey(), position, holder, zipFileIsEncrypted.get());
                     }
                 }, 500); // Delay in milliseconds (500ms = 0.5 seconds)
             });
@@ -201,9 +207,11 @@ public class ZipLibraryAdapter extends RecyclerView.Adapter<ZipLibraryAdapter.Li
         return ZipApplication.getLibraries().size();
     }
 
-    public void handleZipOpening(Context context, String password, int position, LibraryViewHolder holder ) {
+    public void handleZipOpening(String password, int position, LibraryViewHolder holder, Boolean zipFileIsEncrypted ) {
 
-        if (password != null && !password.isEmpty()) {
+        // zipLibraryExtraData.setLockState(LockStatus.NOT_LOCKED);
+
+        if ((password != null && !password.isEmpty()) || !zipFileIsEncrypted) {
             ZipApplication.getLibraries().get(position).setZipkey(password);
             notifyItemChanged(position);
         } else {
@@ -291,7 +299,7 @@ public class ZipLibraryAdapter extends RecyclerView.Adapter<ZipLibraryAdapter.Li
                 return;
             }
             dialog.dismiss();  // Dismiss the dialog on successful validation
-            handleZipOpening(context, password, position, holder);
+            handleZipOpening(password, position, holder, true);
         });
     }
 

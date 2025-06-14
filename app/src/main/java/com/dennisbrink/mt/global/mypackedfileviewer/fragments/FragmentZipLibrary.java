@@ -50,11 +50,6 @@ public class FragmentZipLibrary extends Fragment {
         RecyclerView recyclerView = view.findViewById(R.id.recyclerViewZipLibraryFiles);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireActivity()));
 
-        ImageButton buttonClose = view.findViewById(R.id.imageButtonClose);
-        buttonClose.setOnClickListener(v -> {
-            requireActivity().finishAffinity(); // Close all the activities and close the app
-        });
-
         Bundle args = getArguments();
 
         assert args != null;
