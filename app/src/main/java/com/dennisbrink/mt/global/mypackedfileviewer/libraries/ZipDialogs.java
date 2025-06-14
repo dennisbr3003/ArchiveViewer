@@ -1,8 +1,11 @@
-package com.dennisbrink.mt.global.mypackedfileviewer;
+package com.dennisbrink.mt.global.mypackedfileviewer.libraries;
 
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
+
+import com.dennisbrink.mt.global.mypackedfileviewer.IZipApplication;
+import com.dennisbrink.mt.global.mypackedfileviewer.R;
 
 public class ZipDialogs implements IZipApplication {
     public static void createAndShowDialog(Context context, String title, String text, String action) {

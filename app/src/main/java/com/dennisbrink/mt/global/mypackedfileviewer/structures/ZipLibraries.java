@@ -1,6 +1,6 @@
-package com.dennisbrink.mt.global.mypackedfileviewer;
+package com.dennisbrink.mt.global.mypackedfileviewer.structures;
 
-import androidx.annotation.NonNull;
+import com.dennisbrink.mt.global.mypackedfileviewer.libraries.ZipUtilities;
 
 import java.util.List;
 

@@ -18,6 +18,10 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.dennisbrink.mt.global.mypackedfileviewer.libraries.ZipUtilities;
+import com.dennisbrink.mt.global.mypackedfileviewer.structures.Coordinate;
+import com.dennisbrink.mt.global.mypackedfileviewer.structures.Coordinates;
+
 import java.util.ArrayList;
 
 public class ImageLoginActivity extends AppCompatActivity implements IZipApplication {

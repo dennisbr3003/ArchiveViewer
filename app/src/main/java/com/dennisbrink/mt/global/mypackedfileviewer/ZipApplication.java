@@ -4,8 +4,8 @@ import android.app.Application;
 import android.content.Context;
 import android.content.res.AssetManager;
 
-import androidx.appcompat.app.AppCompatDelegate;
-
+import com.dennisbrink.mt.global.mypackedfileviewer.structures.ZipLibraries;
+import com.dennisbrink.mt.global.mypackedfileviewer.structures.ZipLibrary;
 import com.google.gson.Gson;
 
 import java.io.IOException;

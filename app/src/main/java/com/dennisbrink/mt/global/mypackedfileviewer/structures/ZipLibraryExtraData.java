@@ -1,4 +1,9 @@
-package com.dennisbrink.mt.global.mypackedfileviewer;
+package com.dennisbrink.mt.global.mypackedfileviewer.structures;
+
+import com.dennisbrink.mt.global.mypackedfileviewer.LockStatus;
+import com.dennisbrink.mt.global.mypackedfileviewer.R;
+import com.dennisbrink.mt.global.mypackedfileviewer.ZipApplication;
+import com.dennisbrink.mt.global.mypackedfileviewer.libraries.ZipUtilities;
 
 public class ZipLibraryExtraData {
 

@@ -1,8 +1,10 @@
-package com.dennisbrink.mt.global.mypackedfileviewer;
+package com.dennisbrink.mt.global.mypackedfileviewer.structures;
 
 import android.graphics.Bitmap;
 
 import androidx.annotation.NonNull;
+
+import com.dennisbrink.mt.global.mypackedfileviewer.libraries.ZipUtilities;
 
 public class ZipEntryData {
     private final String fileName, displayDateTime, displaySize;
