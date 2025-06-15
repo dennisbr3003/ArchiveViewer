@@ -6,6 +6,10 @@ import android.content.Intent;
 
 import com.dennisbrink.mt.global.mypackedfileviewer.IZipApplication;
 import com.dennisbrink.mt.global.mypackedfileviewer.R;
+import com.dennisbrink.mt.global.mypackedfileviewer.events.DialogResultActionEvent;
+import com.dennisbrink.mt.global.mypackedfileviewer.events.OpenZipLibraryEvent;
+
+import org.greenrobot.eventbus.EventBus;
 
 public class ZipDialogs implements IZipApplication {
     public static void createAndShowDialog(Context context, String title, String text, String action) {
@@ -18,7 +22,8 @@ public class ZipDialogs implements IZipApplication {
         builder.setPositiveButton("Yes", (dialog, which) -> {
             // we send "yes" to the receiver
             dialog.dismiss();
-            context.sendBroadcast(createBooleanAnswer(action, ANSWER, true));
+            // context.sendBroadcast(createBooleanAnswer(action, ANSWER, true));
+            EventBus.getDefault().post(new DialogResultActionEvent(action));
         });
 
         builder.setNegativeButton("No", (dialog, which) -> {

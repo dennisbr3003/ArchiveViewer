@@ -30,6 +30,7 @@ android {
 
 dependencies {
     implementation libs.glide // Check for latest version
+    implementation libs.eventbus
     implementation libs.photoview
     annotationProcessor libs.compiler
     implementation libs.gson

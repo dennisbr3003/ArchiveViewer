@@ -17,29 +17,28 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
-import androidx.fragment.app.FragmentActivity;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.dennisbrink.mt.global.mypackedfileviewer.fragments.FragmentZipLibrary;
+import com.dennisbrink.mt.global.mypackedfileviewer.events.OpenZipLibraryEvent;
 import com.dennisbrink.mt.global.mypackedfileviewer.libraries.ThumbnailCache;
 import com.dennisbrink.mt.global.mypackedfileviewer.libraries.ZipUtilities;
 import com.dennisbrink.mt.global.mypackedfileviewer.structures.ZipLibrary;
 import com.dennisbrink.mt.global.mypackedfileviewer.structures.ZipLibraryExtraData;
 
 import net.lingala.zip4j.ZipFile;
+
+import org.greenrobot.eventbus.EventBus;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class ZipLibraryAdapter extends RecyclerView.Adapter<ZipLibraryAdapter.LibraryViewHolder> {
+public class ZipLibraryAdapter extends RecyclerView.Adapter<ZipLibraryAdapter.LibraryViewHolder> implements IZipApplication {
 
     ThumbnailCache thumbnailCache = new ThumbnailCache();
     private boolean blockClickListener = false;
     private boolean showDialog = false;
-    private final FragmentActivity activity;
-    public ZipLibraryAdapter(FragmentActivity activity) {
-        this.activity = activity;
-    }
+    public ZipLibraryAdapter() {}
 
     @NonNull
     @Override
@@ -73,9 +72,8 @@ public class ZipLibraryAdapter extends RecyclerView.Adapter<ZipLibraryAdapter.Li
             holder.sourceTextView.setVisibility(View.VISIBLE);
 
             // check if there is a thumbnail and the lock state. If you have to enter a password manually
-            // it is assumed sensitive data is in there. A thumbnail may tell an unexpected tail
-            if (!zipLibraryExtraData.getLockState().equals(LockStatus.LOCKED_NO_PASSWORD) &&
-                    thumbnailCache.isThumbnailCached("", "cache_" + library.getSource().hashCode())) {
+            // it is assumed sensitive data is in there. A thumbnail may tell an unexpected tale
+            if (thumbnailCache.isThumbnailCached("", "cache_" + library.getSource().hashCode())) {
                 holder.libraryImageView.setImageBitmap(thumbnailCache.loadThumbnail("", "cache_" + library.getSource().hashCode()));
             } else { // otherwise use the placeholder
                 holder.libraryImageView.setImageResource(R.drawable.archive);
@@ -209,8 +207,6 @@ public class ZipLibraryAdapter extends RecyclerView.Adapter<ZipLibraryAdapter.Li
 
     public void handleZipOpening(String password, int position, LibraryViewHolder holder, Boolean zipFileIsEncrypted ) {
 
-        // zipLibraryExtraData.setLockState(LockStatus.NOT_LOCKED);
-
         if ((password != null && !password.isEmpty()) || !zipFileIsEncrypted) {
             ZipApplication.getLibraries().get(position).setZipkey(password);
             notifyItemChanged(position);
@@ -222,25 +218,10 @@ public class ZipLibraryAdapter extends RecyclerView.Adapter<ZipLibraryAdapter.Li
             }
             return;
         }
-        // Prepare fragment
-        ZipLibrary item = ZipApplication.getLibraries().get(position);
-        FragmentZipLibrary fragment = FragmentZipLibrary.newInstance(
-                item.getSource(),
-                item.getTarget(),
-                item.getName(),
-                item.getZipkey(),
-                position
-        );
+
+        EventBus.getDefault().post(new OpenZipLibraryEvent(position));
 
         blockClickListener=false;
-
-        Log.d("DB1", "ZipLibraryAdapter.handleZipOpening: Starting fragment FragmentZipLibrary");
-        // Replace fragment
-        activity.getSupportFragmentManager()
-                .beginTransaction()
-                .replace(R.id.fragmentContainer, fragment) // Use your FrameLayout's ID
-                .addToBackStack(null)
-                .commit();
 
         if (holder.progressBarLib != null) {
             holder.progressBarLib.setVisibility(View.INVISIBLE);

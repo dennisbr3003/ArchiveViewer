@@ -1,8 +1,6 @@
 package com.dennisbrink.mt.global.mypackedfileviewer.fragments;
 
 import android.annotation.SuppressLint;
-import android.content.Context;
-import android.content.IntentFilter;
 import android.os.Build;
 import android.os.Bundle;
 
@@ -21,76 +19,65 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 
 import com.dennisbrink.mt.global.mypackedfileviewer.IZipApplication;
-import com.dennisbrink.mt.global.mypackedfileviewer.IZipLibraryActivityListener;
 import com.dennisbrink.mt.global.mypackedfileviewer.R;
-import com.dennisbrink.mt.global.mypackedfileviewer.Receiver;
+import com.dennisbrink.mt.global.mypackedfileviewer.events.DialogResultActionEvent;
 import com.dennisbrink.mt.global.mypackedfileviewer.libraries.ThumbnailCache;
 import com.dennisbrink.mt.global.mypackedfileviewer.ZipApplication;
 import com.dennisbrink.mt.global.mypackedfileviewer.libraries.ZipDialogs;
 import com.dennisbrink.mt.global.mypackedfileviewer.ZipLibraryAdapter;
 
-public class FragmentZipLibraries extends Fragment implements IZipApplication, IZipLibraryActivityListener {
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
+
+public class FragmentZipLibraries extends Fragment implements IZipApplication {
 
     private ZipLibraryAdapter adapter;
     TextView statusBar;
-    Receiver receiver = null;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view =  inflater.inflate(R.layout.fragment_zip_libraries, container, false);
 
-//        ImageButton buttonClose = view.findViewById(R.id.buttonClose);
-//        buttonClose.setOnClickListener(v -> {
-//            requireActivity().finishAffinity(); // Close all the activities and close the app
-//        });
-
         ImageButton buttonClearAll = view.findViewById(R.id.buttonClearAll);
-        buttonClearAll.setOnClickListener(v -> {
-            ZipDialogs.createAndShowDialog(
-                    v.getContext(),
-                    getString(R.string.confirm_deletion_title),
-                    getString(R.string.textmessage_delete_app_data),
-                    DELETE_APP_DATA
-            );
-        });
+        buttonClearAll.setOnClickListener(v -> ZipDialogs.createAndShowDialog(
+                v.getContext(),
+                getString(R.string.confirm_deletion_title),
+                getString(R.string.textmessage_delete_app_data),
+                DELETE_APP_DATA
+        ));
 
         ImageButton buttonClearCache = view.findViewById(R.id.buttonClearCache);
-        buttonClearCache.setOnClickListener(v -> {
-            ZipDialogs.createAndShowDialog(
-                    v.getContext(),
-                    getString(R.string.confirm_deletion_title),
-                    getString(R.string.textmessage_delete_cached_data),
-                    DELETE_CACHED_DATA
-            );
-        });
+        buttonClearCache.setOnClickListener(v -> ZipDialogs.createAndShowDialog(
+                v.getContext(),
+                getString(R.string.confirm_deletion_title),
+                getString(R.string.textmessage_delete_cached_data),
+                DELETE_CACHED_DATA
+        ));
 
         ImageButton buttonClearSavedData = view.findViewById(R.id.buttonClearSavedData);
-        buttonClearSavedData.setOnClickListener(v -> {
-            ZipDialogs.createAndShowDialog(
-                    v.getContext(),
-                    getString(R.string.confirm_deletion_title),
-                    getString(R.string.textmessage_delete_extra_data),
-                    DELETE_EXTRA_DATA
-            );
-        });
+        buttonClearSavedData.setOnClickListener(v -> ZipDialogs.createAndShowDialog(
+                v.getContext(),
+                getString(R.string.confirm_deletion_title),
+                getString(R.string.textmessage_delete_extra_data),
+                DELETE_EXTRA_DATA
+        ));
 
         ImageButton buttonClearTouchPoints = view.findViewById(R.id.buttonClearTouchpoints);
-        buttonClearTouchPoints.setOnClickListener(v -> {
-            ZipDialogs.createAndShowDialog(
-                    v.getContext(),
-                    getString(R.string.confirm_deletion_title),
-                    getString(R.string.textmessage_delete_touch_point_sequence),
-                    DELETE_TOUCH_POINTS
-            );
-        });
+        buttonClearTouchPoints.setOnClickListener(v -> ZipDialogs.createAndShowDialog(
+                v.getContext(),
+                getString(R.string.confirm_deletion_title),
+                getString(R.string.textmessage_delete_touch_point_sequence),
+                DELETE_TOUCH_POINTS
+        ));
 
         RecyclerView recyclerView = view.findViewById(R.id.recyclerViewZipLibrary);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireActivity()));
 
         statusBar = view.findViewById(R.id.statusBar);
 
-        adapter = new ZipLibraryAdapter(requireActivity());
+        adapter = new ZipLibraryAdapter();
         recyclerView.setAdapter(adapter);
 
         setStatusBarText();
@@ -109,72 +96,42 @@ public class FragmentZipLibraries extends Fragment implements IZipApplication, I
         statusBar.setText(text);
     }
 
-    // registering this activity for use of broadcast-receiver
-    private IntentFilter getFilter(){
-        IntentFilter intentFilter = new IntentFilter();
-        Log.d("DB1", "FragmentZipLibraries.getFilter: Registering for broadcast actions (4)");
-        intentFilter.addAction(DELETE_TOUCH_POINTS);
-        intentFilter.addAction(DELETE_APP_DATA);
-        intentFilter.addAction(DELETE_EXTRA_DATA);
-        intentFilter.addAction(DELETE_CACHED_DATA);
-        return intentFilter;
-    }
-
     @Override
     public void onStop() {
+        EventBus.getDefault().unregister(this);
         super.onStop();
-        if (receiver != null){
-            Log.d("DB1", "FragmentZipLibraries.onPause: Unregistering receiver");
-            requireActivity().unregisterReceiver(receiver);
-            receiver = null;
-        }
     }
 
     @RequiresApi(api = Build.VERSION_CODES.TIRAMISU)
     @Override
     public void onStart() {
         super.onStart();
-        if(receiver == null){
-            Log.d("DB1", "FragmentZipLibraries.onResume: Registering receiver");
-            receiver = new Receiver();
-            // Make yourself known to the receiver. This way the receiver will know this activity exists
-            // and will be able to run any of the methods connected to the actions registered
-            // This uses polymorphism --> the class is of type IZipLibraryActivityListener
-            receiver.setZipLibraryActivity(this);
+        EventBus.getDefault().register(this);
+    }
+
+    // Use @Subscribe to handle the Event
+    @SuppressLint("NotifyDataSetChanged")
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onDialogResultActionEvent(DialogResultActionEvent event) {
+        Log.d("DB1", "FragmentZipLibraries.onDialogResultActionEvent: Event captured, execute logic for action " + event.action);
+
+        ThumbnailCache thumbnailCache = new ThumbnailCache();
+
+        switch(event.action){
+            case DELETE_TOUCH_POINTS:
+                thumbnailCache.clearCacheFolder(COORDINATE_DIR);
+                break;
+            case DELETE_APP_DATA:
+                thumbnailCache.clearAll();
+                adapter.notifyDataSetChanged(); // this is correct in this case -->  all copied data is deleted
+                break;
+            case DELETE_EXTRA_DATA:
+                thumbnailCache.clearCacheFolder(FILE_EXTRA_DIR);
+                break;
+            case DELETE_CACHED_DATA:
+                thumbnailCache.clearCacheFolder(CACHE_DIR);
+                adapter.notifyDataSetChanged(); // this is correct in this case -->  all thumbnails are cleared
+                break;
         }
-        requireActivity().registerReceiver(receiver, getFilter(), Context.RECEIVER_EXPORTED);
     }
-
-    @Override
-    public void clearTouchPointSequence() {
-        // this is fired from the receiver and only if the "yes" button is hit in the dialog
-        ThumbnailCache thumbnailCache = new ThumbnailCache();
-        thumbnailCache.clearCacheFolder(COORDINATE_DIR); // no effect on thumbnails --> entry code sequence is deleted
-    }
-
-    @SuppressLint("NotifyDataSetChanged")
-    @Override
-    public void clearAllAppData() {
-        // this is fired from the receiver and only if the "yes" button is hit in the dialog
-        ThumbnailCache thumbnailCache = new ThumbnailCache();
-        thumbnailCache.clearAll();
-        adapter.notifyDataSetChanged(); // this is correct in this case -->  all copied data is deleted
-    }
-
-    @Override
-    public void clearExtraData() {
-        // this is fired from the receiver and only if the "yes" button is hit in the dialog
-        ThumbnailCache thumbnailCache = new ThumbnailCache();
-        thumbnailCache.clearCacheFolder(FILE_EXTRA_DIR); // no effect on thumbnails --> alle extra data is cleared
-    }
-
-    @SuppressLint("NotifyDataSetChanged")
-    @Override
-    public void clearCachedData() {
-        // this is fired from the receiver and only if the "yes" button is hit in the dialog
-        ThumbnailCache thumbnailCache = new ThumbnailCache();
-        thumbnailCache.clearCacheFolder(CACHE_DIR);
-        adapter.notifyDataSetChanged(); // this is correct in this case -->  all thumbnails are cleared
-    }
-
 }

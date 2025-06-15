@@ -26,8 +26,6 @@ import java.util.Objects;
 
 public class FragmentZipLibrary extends Fragment {
 
-    private int position = -1;
-
     public static FragmentZipLibrary newInstance(String source, String target, String name, String zipkey, int position) {
         FragmentZipLibrary fragment = new FragmentZipLibrary();
         Bundle args = new Bundle();
@@ -57,7 +55,7 @@ public class FragmentZipLibrary extends Fragment {
         String target = args.getString("target");
         String name = args.getString("name");
         String zipkey = args.getString("zipkey");
-        position = args.getInt("position", -1);
+        int position = args.getInt("position", -1);
 
         Log.d("DB1", "FragmentZipLibrary.onCreateView: position after opening fragment: " + position);
 
@@ -77,30 +75,12 @@ public class FragmentZipLibrary extends Fragment {
         numEntriesTextView.setText(summary);
 
         ImageButton buttonUp = view.findViewById(R.id.imageButtonUp);
-        buttonUp.setOnClickListener(v -> {
-            smoothScrollToPosition(recyclerView, requireActivity(), 0);
-        });
+        buttonUp.setOnClickListener(v -> smoothScrollToPosition(recyclerView, requireActivity(), 0));
 
         ImageButton buttonDown = view.findViewById(R.id.imageButtonDown);
-        buttonDown.setOnClickListener(v -> {
-            smoothScrollToPosition(recyclerView, requireActivity(), zipContent.size() - 1);
-        });
+        buttonDown.setOnClickListener(v -> smoothScrollToPosition(recyclerView, requireActivity(), zipContent.size() - 1));
 
-        // anonymous click listener passed to the adapter. It has "position" as a parameter
-        ZipFileAdapter adapter = new ZipFileAdapter(zipContent, position -> {
-            FragmentZipLibraryFile fragment = FragmentZipLibraryFile.newInstance(
-                    position,
-                    source,
-                    target,
-                    zipkey
-            );
-            requireActivity().getSupportFragmentManager()
-                    .beginTransaction()
-                    .replace(R.id.fragmentContainer, fragment)
-                    .addToBackStack(null)
-                    .commit();
-        }, position);
-
+        ZipFileAdapter adapter = new ZipFileAdapter(zipContent, position);
         recyclerView.setAdapter(adapter);
 
         return view;

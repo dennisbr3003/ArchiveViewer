@@ -24,11 +24,8 @@ import java.util.List;
 public class FragmentZipLibraryFile extends Fragment {
 
     private LinearLayoutManager layoutManager;
-    private RecyclerView recyclerView;
-    private ImageAdapter adapter;
     private int startPosition = 0;
     private String source, target, zipkey;
-    private List<ZipEntryData> zipContent;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -49,18 +46,21 @@ public class FragmentZipLibraryFile extends Fragment {
             zipkey = getArguments().getString("zipkey");
         }
 
-        zipContent = ZipUtilities.getZipContentsFromAsset(source, target, zipkey);
-        recyclerView = view.findViewById(R.id.recyclerView4);
+        List<ZipEntryData> zipContent = ZipUtilities.getZipContentsFromAsset(source, target, zipkey);
+        RecyclerView recyclerView = view.findViewById(R.id.recyclerView4);
         layoutManager = new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false);
         recyclerView.setLayoutManager(layoutManager);
 
         PagerSnapHelper snapHelper = new PagerSnapHelper();
         snapHelper.attachToRecyclerView(recyclerView);
 
-        adapter = new ImageAdapter(zipContent, zipkey, target);
+        ImageAdapter adapter = new ImageAdapter(zipContent, zipkey, target);
         recyclerView.setAdapter(adapter);
 
-        Log.d("DB1", "FragmentZipLibraryFile.onViewCreated: Start position " + startPosition);
+        Log.d("DB1", "FragmentZipLibraryFile.onViewCreated: Position " + startPosition);
+        Log.d("DB1", "FragmentZipLibraryFile.onViewCreated: Source " + source);
+        Log.d("DB1", "FragmentZipLibraryFile.onViewCreated: Target " + target);
+        Log.d("DB1", "FragmentZipLibraryFile.onViewCreated: Zipkey " + zipkey);
 
         if (savedInstanceState != null) {
             int savedPosition = savedInstanceState.getInt("current_position");
