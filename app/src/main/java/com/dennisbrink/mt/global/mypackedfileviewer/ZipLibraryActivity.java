@@ -1,7 +1,7 @@
 package com.dennisbrink.mt.global.mypackedfileviewer;
 
-import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.WindowManager;
 
 import androidx.activity.EdgeToEdge;
@@ -10,9 +10,18 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.dennisbrink.mt.global.mypackedfileviewer.events.OpenZipLibraryEvent;
+import com.dennisbrink.mt.global.mypackedfileviewer.events.OpenZipLibraryFileEvent;
 import com.dennisbrink.mt.global.mypackedfileviewer.fragments.FragmentZipLibraries;
+import com.dennisbrink.mt.global.mypackedfileviewer.fragments.FragmentZipLibrary;
+import com.dennisbrink.mt.global.mypackedfileviewer.fragments.FragmentZipLibraryFile;
+import com.dennisbrink.mt.global.mypackedfileviewer.structures.ZipLibrary;
 
-public class ZipLibraryActivity extends AppCompatActivity  {
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
+
+public class ZipLibraryActivity extends AppCompatActivity implements IZipApplication  {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,4 +52,58 @@ public class ZipLibraryActivity extends AppCompatActivity  {
         }
     }
 
+    @Override
+    public void onPause() {
+        EventBus.getDefault().unregister(this);
+        super.onPause();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        EventBus.getDefault().register(this);
+    }
+
+    // Use @Subscribe to handle the Event
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onOpenZipLibraryEvent(OpenZipLibraryEvent event) {
+        Log.d("DB1", "ZipLibraryActivity.onOpenZipLibraryEvent: Event captured, open library fragment for position " + event.position);
+        loadFragmentZipLibrary(event.position);
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onOpenZipLibraryFileEvent(OpenZipLibraryFileEvent event) {
+        Log.d("DB1", "ZipLibraryActivity.onOpenZipLibraryFileEvent: Event captured, open library file fragment for position " + event.position);
+        loadFragmentZipLibraryFile(event.position, event.source, event.target, event.zipkey);
+    }
+
+    private void loadFragmentZipLibrary(int position) {
+        ZipLibrary item = ZipApplication.getLibraries().get(position);
+        FragmentZipLibrary fragment = FragmentZipLibrary.newInstance(
+                item.getSource(),
+                item.getTarget(),
+                item.getName(),
+                item.getZipkey(),
+                position
+        );
+        this.getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.fragmentContainer, fragment) // Use your FrameLayout's ID
+                .addToBackStack(null)
+                .commit();
+    }
+
+    private void loadFragmentZipLibraryFile (int position, String source, String target, String zipkey) {
+        FragmentZipLibraryFile fragment = FragmentZipLibraryFile.newInstance(
+                position,
+                source,
+                target,
+                zipkey
+        );
+        this.getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.fragmentContainer, fragment)
+                .addToBackStack(null)
+                .commit();
+    }
 }

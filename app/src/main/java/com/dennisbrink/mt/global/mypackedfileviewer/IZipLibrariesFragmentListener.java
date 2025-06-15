@@ -1,6 +1,6 @@
 package com.dennisbrink.mt.global.mypackedfileviewer;
 
-public interface IZipLibraryActivityListener {
+public interface IZipLibrariesFragmentListener {
     void clearTouchPointSequence();
     void clearAllAppData();
     void clearExtraData();
