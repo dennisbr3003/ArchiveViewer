@@ -11,6 +11,7 @@ import com.dennisbrink.mt.global.mypackedfileviewer.IZipApplication;
 import com.dennisbrink.mt.global.mypackedfileviewer.LockStatus;
 import com.dennisbrink.mt.global.mypackedfileviewer.R;
 import com.dennisbrink.mt.global.mypackedfileviewer.ZipApplication;
+import com.dennisbrink.mt.global.mypackedfileviewer.EVideoExtensions;
 import com.dennisbrink.mt.global.mypackedfileviewer.structures.Coordinates;
 import com.dennisbrink.mt.global.mypackedfileviewer.structures.ZipEntryData;
 import com.dennisbrink.mt.global.mypackedfileviewer.structures.ZipLibraryExtraData;
@@ -215,25 +216,29 @@ public class ZipUtilities implements IZipApplication {
         return dateTime.format(formatter);
     }
 
-    public static Bitmap createThumbnail(InputStream inputStream, int width, int height, Bitmap placeholder) {
+    public static Bitmap createThumbnail(InputStream inputStream, int width, int height, Bitmap placeholder, String fileName) {
 
         Bitmap thumbnail = null;
 
-        try {
-            // Attempt to decode the input stream into a bitmap
-            Bitmap originalBitmap = BitmapFactory.decodeStream(inputStream);
+        // check if it is a video extension before trying to create a thumbnail
+        if(!EVideoExtensions.contains(getFileExtension(fileName))) {
+            try {
+                // Attempt to decode the input stream into a bitmap
+                Bitmap originalBitmap = BitmapFactory.decodeStream(inputStream);
 
-            // Check if the decoding failed, possibly due to unsupported format
-            if (originalBitmap != null) {
-                // Create the thumbnail
-                thumbnail = ThumbnailUtils.extractThumbnail(originalBitmap, width, height);
-            } else {
-                Log.d("DB1", "ZipUtilities.createThumbnail: Decoding failed: Unsupported file format or corrupt image.");
+                // Check if the decoding failed, possibly due to unsupported format
+                if (originalBitmap != null) {
+                    // Create the thumbnail
+                    thumbnail = ThumbnailUtils.extractThumbnail(originalBitmap, width, height);
+                } else {
+                    Log.d("DB1", "ZipUtilities.createThumbnail: Decoding failed: Unsupported file format or corrupt image.");
+                }
+            } catch (Exception e) {
+                Log.d("DB1", "ZipUtilities.createThumbnail: Thumbnail generation failed: " + e.getMessage());
             }
-        } catch (Exception e) {
-            Log.d("DB1", "ZipUtilities.createThumbnail: Thumbnail generation failed: " + e.getMessage());
+        } else {
+            Log.d("DB1", "ZipUtilities.createThumbnail: file is found to be a video file");
         }
-
         return thumbnail != null ? thumbnail : placeholder;
 
     }
@@ -375,4 +380,18 @@ public class ZipUtilities implements IZipApplication {
         return gson.fromJson(jsonString, Coordinates.class);
     }
 
+    public static void saveByteDataToFile(String fileName, String folder, byte[] data) {
+        File extraDataDir = new File(ZipApplication.getAppContext().getFilesDir(), folder);
+        if (!extraDataDir.exists()) extraDataDir.mkdirs();
+
+        File file = new File(extraDataDir, fileName);
+        try (FileOutputStream fos = new FileOutputStream(file)) {
+            fos.write(data);
+            fos.flush();
+        } catch (IOException e) {
+            // do nothing, we just have no file that's all
+            Log.d("DB1", "ZipUtilities.saveByteDataToFile: Non lethal error saving data -> " + e.getMessage());
+        }
+
+    }
 }

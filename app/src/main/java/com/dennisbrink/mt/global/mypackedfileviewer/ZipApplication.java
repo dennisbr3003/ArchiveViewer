@@ -22,8 +22,6 @@ public class ZipApplication extends Application {
     public void onCreate() {
         super.onCreate();
         instance = this;
-
-        //AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
         zipLibraries = loadLibrariesFromAssets("libraries-dev.json");
     }
 

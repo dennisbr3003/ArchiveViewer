@@ -4,10 +4,13 @@ import android.graphics.Bitmap;
 
 import androidx.annotation.NonNull;
 
+import com.dennisbrink.mt.global.mypackedfileviewer.EFileTypes;
+import com.dennisbrink.mt.global.mypackedfileviewer.EVideoExtensions;
 import com.dennisbrink.mt.global.mypackedfileviewer.libraries.ZipUtilities;
 
 public class ZipEntryData {
     private final String fileName, displayDateTime, displaySize;
+    private final EFileTypes eFileType;
     private String cacheName, cacheFolder;
     private Bitmap thumbnail;
 
@@ -23,6 +26,11 @@ public class ZipEntryData {
         this.fileName = fileName;
         this.displayDateTime = ZipUtilities.convertTimestampToReadableFormat(creationDate);
         this.displaySize = ZipUtilities.convertBytesToKilobytes(fileSize);
+        this.eFileType = setFileType(this.fileName);
+    }
+
+    private EFileTypes setFileType(String fileName) {
+        return EVideoExtensions.contains(ZipUtilities.getFileExtension(fileName))? EFileTypes.VIDEO : EFileTypes.IMAGE;
     }
 
     public String getFileName() {
@@ -41,6 +49,8 @@ public class ZipEntryData {
         this.cacheName = "cache_" + target + filenameHash;
     }
 
+    public EFileTypes getFileType() { return eFileType; }
+
     public String getCacheFolder() {
         return cacheFolder;
     }
@@ -53,15 +63,4 @@ public class ZipEntryData {
         return this.cacheName;
     }
 
-    @NonNull
-    @Override
-    public String toString() {
-        return "ZipEntryData{" +
-                "cacheFolder='" + cacheFolder + '\'' +
-                ", cacheName='" + cacheName + '\'' +
-                ", displaySize='" + displaySize + '\'' +
-                ", displayDateTime='" + displayDateTime + '\'' +
-                ", fileName='" + fileName + '\'' +
-                '}';
-    }
 }

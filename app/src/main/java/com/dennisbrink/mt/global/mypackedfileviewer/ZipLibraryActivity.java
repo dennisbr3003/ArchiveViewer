@@ -15,6 +15,7 @@ import com.dennisbrink.mt.global.mypackedfileviewer.events.OpenZipLibraryFileEve
 import com.dennisbrink.mt.global.mypackedfileviewer.fragments.FragmentZipLibraries;
 import com.dennisbrink.mt.global.mypackedfileviewer.fragments.FragmentZipLibrary;
 import com.dennisbrink.mt.global.mypackedfileviewer.fragments.FragmentZipLibraryFile;
+import com.dennisbrink.mt.global.mypackedfileviewer.fragments.FragmentZipLibraryVideoFile;
 import com.dennisbrink.mt.global.mypackedfileviewer.structures.ZipLibrary;
 
 import org.greenrobot.eventbus.EventBus;
@@ -73,8 +74,15 @@ public class ZipLibraryActivity extends AppCompatActivity implements IZipApplica
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onOpenZipLibraryFileEvent(OpenZipLibraryFileEvent event) {
-        Log.d("DB1", "ZipLibraryActivity.onOpenZipLibraryFileEvent: Event captured, open library file fragment for position " + event.position);
-        loadFragmentZipLibraryFile(event.position, event.source, event.target, event.zipkey);
+        Log.d("DB1", "ZipLibraryActivity.onOpenZipLibraryFileEvent: Event captured source: "
+                                + event.source + ", target: " + event.target + ", zipkey: " + event.zipkey
+                                + ", type: " + event.eFileType.name() + ", position: " + event.position
+                                + ", fileName: " + event.fileName);
+        if(event.eFileType.equals(EFileTypes.VIDEO)) {
+            loadFragmentZipLibraryVideoFile(event.position, event.source, event.target, event.zipkey, event.fileName);
+        } else {
+            loadFragmentZipLibraryFile(event.position, event.source, event.target, event.zipkey);
+        }
     }
 
     private void loadFragmentZipLibrary(int position) {
@@ -106,4 +114,20 @@ public class ZipLibraryActivity extends AppCompatActivity implements IZipApplica
                 .addToBackStack(null)
                 .commit();
     }
+
+    private void loadFragmentZipLibraryVideoFile (int position, String source, String target, String zipkey, String fileName) {
+        FragmentZipLibraryVideoFile fragment = FragmentZipLibraryVideoFile.newInstance(
+                position,
+                source,
+                target,
+                zipkey,
+                fileName
+        );
+        this.getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.fragmentContainer, fragment)
+                .addToBackStack(null)
+                .commit();
+    }
+
 }
