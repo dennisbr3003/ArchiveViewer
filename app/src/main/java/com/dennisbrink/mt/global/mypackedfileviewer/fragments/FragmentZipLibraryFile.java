@@ -16,8 +16,12 @@ import android.view.ViewGroup;
 
 import com.dennisbrink.mt.global.mypackedfileviewer.ImageAdapter;
 import com.dennisbrink.mt.global.mypackedfileviewer.R;
+import com.dennisbrink.mt.global.mypackedfileviewer.events.VideoThumbnailFinalEvent;
 import com.dennisbrink.mt.global.mypackedfileviewer.structures.ZipEntryData;
 import com.dennisbrink.mt.global.mypackedfileviewer.libraries.ZipUtilities;
+
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 
 import java.util.List;
 

@@ -308,6 +308,7 @@ public class ZipUtilities implements IZipApplication {
                 );
                 data.setCacheName(target, String.valueOf(fileHeader.getFileName().hashCode()));
                 data.setCacheFolder(target);
+                data.setFinal(false);
                 entryDataList.add(data);
             }
 

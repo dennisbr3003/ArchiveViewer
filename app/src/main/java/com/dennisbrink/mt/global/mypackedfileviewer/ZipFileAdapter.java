@@ -15,11 +15,14 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.dennisbrink.mt.global.mypackedfileviewer.events.OpenZipLibraryFileEvent;
+import com.dennisbrink.mt.global.mypackedfileviewer.events.VideoThumbnailFinalEvent;
 import com.dennisbrink.mt.global.mypackedfileviewer.libraries.ThumbnailCache;
 import com.dennisbrink.mt.global.mypackedfileviewer.libraries.ZipUtilities;
 import com.dennisbrink.mt.global.mypackedfileviewer.structures.ZipEntryData;
 
 import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,6 +44,14 @@ public class ZipFileAdapter extends RecyclerView.Adapter<ZipFileAdapter.ViewHold
         this.libraryZipKey = ZipApplication.getLibraries().get(libraryPosition).getZipkey();
         this.librarySource = ZipApplication.getLibraries().get(libraryPosition).getSource();
 
+        EventBus.getDefault().register(this);
+
+    }
+
+    @Override
+    public void onDetachedFromRecyclerView(@NonNull RecyclerView recyclerView) {
+        super.onDetachedFromRecyclerView(recyclerView);
+        EventBus.getDefault().unregister(this);
     }
 
     @NonNull
@@ -91,7 +102,7 @@ public class ZipFileAdapter extends RecyclerView.Adapter<ZipFileAdapter.ViewHold
             holder.thumbNail.setImageBitmap(entryData.getThumbnail());
         }
 
-        holder.itemView.setOnClickListener(v -> EventBus.getDefault().post(new OpenZipLibraryFileEvent(position, librarySource, libraryTarget, libraryZipKey, entryData.getFileType(), entryData.getFileName())));
+        holder.itemView.setOnClickListener(v -> EventBus.getDefault().post(new OpenZipLibraryFileEvent(position, librarySource, libraryTarget, libraryZipKey, entryData)));
 
     }
 
@@ -112,5 +123,14 @@ public class ZipFileAdapter extends RecyclerView.Adapter<ZipFileAdapter.ViewHold
             thumbNail = view.findViewById(R.id.thumbnail);
         }
     }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onVideoThumbnailFinalEvent(VideoThumbnailFinalEvent event) {
+        Log.d("DB1", "ZipLibraryActivity.onVideoThumbnailFinalEvent: Event captured, video thumbnail is final for position " + event.position);
+        ZipEntryData entryData = zipEntries.get(event.position);
+        entryData.setFinal(true);
+        notifyItemChanged(event.position);
+    }
+
 
 }

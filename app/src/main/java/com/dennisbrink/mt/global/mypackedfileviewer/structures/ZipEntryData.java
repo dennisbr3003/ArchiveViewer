@@ -13,7 +13,9 @@ public class ZipEntryData {
     private final EFileTypes eFileType;
     private String cacheName, cacheFolder;
     private Bitmap thumbnail;
-
+    private Boolean isFinal; // used for video's that get the thumbnail after the video is actually played
+                             // initially each video will have the placeholder until it is played and this
+                             // switch is set
     public Bitmap getThumbnail() {
         return thumbnail;
     }
@@ -63,4 +65,7 @@ public class ZipEntryData {
         return this.cacheName;
     }
 
+    public void setFinal(Boolean aFinal) { isFinal = aFinal; }
+
+    public Boolean getFinal() { return isFinal; }
 }

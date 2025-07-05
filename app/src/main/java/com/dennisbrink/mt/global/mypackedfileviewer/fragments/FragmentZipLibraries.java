@@ -102,7 +102,6 @@ public class FragmentZipLibraries extends Fragment implements IZipApplication {
         super.onStop();
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.TIRAMISU)
     @Override
     public void onStart() {
         super.onStart();

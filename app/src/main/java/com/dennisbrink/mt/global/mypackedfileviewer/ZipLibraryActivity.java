@@ -12,10 +12,12 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.dennisbrink.mt.global.mypackedfileviewer.events.OpenZipLibraryEvent;
 import com.dennisbrink.mt.global.mypackedfileviewer.events.OpenZipLibraryFileEvent;
+import com.dennisbrink.mt.global.mypackedfileviewer.events.VideoThumbnailFinalEvent;
 import com.dennisbrink.mt.global.mypackedfileviewer.fragments.FragmentZipLibraries;
 import com.dennisbrink.mt.global.mypackedfileviewer.fragments.FragmentZipLibrary;
 import com.dennisbrink.mt.global.mypackedfileviewer.fragments.FragmentZipLibraryFile;
 import com.dennisbrink.mt.global.mypackedfileviewer.fragments.FragmentZipLibraryVideoFile;
+import com.dennisbrink.mt.global.mypackedfileviewer.structures.ZipEntryData;
 import com.dennisbrink.mt.global.mypackedfileviewer.structures.ZipLibrary;
 
 import org.greenrobot.eventbus.EventBus;
@@ -76,11 +78,13 @@ public class ZipLibraryActivity extends AppCompatActivity implements IZipApplica
     public void onOpenZipLibraryFileEvent(OpenZipLibraryFileEvent event) {
         Log.d("DB1", "ZipLibraryActivity.onOpenZipLibraryFileEvent: Event captured source: "
                                 + event.source + ", target: " + event.target + ", zipkey: " + event.zipkey
-                                + ", type: " + event.eFileType.name() + ", position: " + event.position
-                                + ", fileName: " + event.fileName);
-        if(event.eFileType.equals(EFileTypes.VIDEO)) {
-            loadFragmentZipLibraryVideoFile(event.position, event.source, event.target, event.zipkey, event.fileName);
+                                + ", type: " + event.entryData.getFileType() + ", position: " + event.position
+                                + ", fileName: " + event.entryData.getFileName());
+        if(event.entryData.getFileType().equals(EFileTypes.VIDEO)) {
+            Log.d("DB1", "ZipLibraryActivity.onOpenZipLibraryFileEvent: start video fragment");
+            loadFragmentZipLibraryVideoFile(event.position, event.source, event.target, event.zipkey, event.entryData);
         } else {
+            Log.d("DB1", "ZipLibraryActivity.onOpenZipLibraryFileEvent: start image fragment");
             loadFragmentZipLibraryFile(event.position, event.source, event.target, event.zipkey);
         }
     }
@@ -115,19 +119,24 @@ public class ZipLibraryActivity extends AppCompatActivity implements IZipApplica
                 .commit();
     }
 
-    private void loadFragmentZipLibraryVideoFile (int position, String source, String target, String zipkey, String fileName) {
-        FragmentZipLibraryVideoFile fragment = FragmentZipLibraryVideoFile.newInstance(
-                position,
-                source,
-                target,
-                zipkey,
-                fileName
-        );
-        this.getSupportFragmentManager()
-                .beginTransaction()
-                .replace(R.id.fragmentContainer, fragment)
-                .addToBackStack(null)
-                .commit();
+    private void loadFragmentZipLibraryVideoFile (int position, String source, String target, String zipkey, ZipEntryData entryData) {
+        Log.d("DB1", "ZipLibraryActivity.loadFragmentZipLibraryVideoFile: load video fragment");
+        try {
+            FragmentZipLibraryVideoFile fragment = FragmentZipLibraryVideoFile.newInstance(
+                    position,
+                    source,
+                    target,
+                    zipkey,
+                    entryData
+            );
+            this.getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragmentContainer, fragment)
+                    .addToBackStack(null)
+                    .commit();
+        } catch (Exception e) {
+            Log.d("DB1", "ZipLibraryActivity.loadFragmentZipLibraryVideoFile: Error loading video fragment " + e.getMessage());
+        }
     }
 
 }

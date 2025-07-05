@@ -77,6 +77,8 @@ public class ThumbnailCache implements IZipApplication {
         }
     }
 
+
+
     private void deleteDirectoryContents(File directory) {
         File[] files = directory.listFiles();
         if (files != null) {
