@@ -30,11 +30,11 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class ZipFileAdapter extends RecyclerView.Adapter<ZipFileAdapter.ViewHolder> {
+public class ZipFileAdapter extends RecyclerView.Adapter<ZipFileAdapter.ViewHolder> implements IZipApplication {
     private final String libraryTarget, libraryZipKey, librarySource;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private final Handler uiHandler = new Handler(Looper.getMainLooper());
-    private final List<ZipEntryData> zipEntries;
+    private List<ZipEntryData> zipEntries;
     ThumbnailCache thumbnailCache = new ThumbnailCache();
     Bitmap placeholder = BitmapFactory.decodeResource(ZipApplication.getAppContext().getResources(), R.drawable.no_image_small);
 
@@ -43,15 +43,6 @@ public class ZipFileAdapter extends RecyclerView.Adapter<ZipFileAdapter.ViewHold
         this.libraryTarget = ZipApplication.getLibraries().get(libraryPosition).getTarget();
         this.libraryZipKey = ZipApplication.getLibraries().get(libraryPosition).getZipkey();
         this.librarySource = ZipApplication.getLibraries().get(libraryPosition).getSource();
-
-        EventBus.getDefault().register(this);
-
-    }
-
-    @Override
-    public void onDetachedFromRecyclerView(@NonNull RecyclerView recyclerView) {
-        super.onDetachedFromRecyclerView(recyclerView);
-        EventBus.getDefault().unregister(this);
     }
 
     @NonNull
@@ -123,14 +114,5 @@ public class ZipFileAdapter extends RecyclerView.Adapter<ZipFileAdapter.ViewHold
             thumbNail = view.findViewById(R.id.thumbnail);
         }
     }
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onVideoThumbnailFinalEvent(VideoThumbnailFinalEvent event) {
-        Log.d("DB1", "ZipLibraryActivity.onVideoThumbnailFinalEvent: Event captured, video thumbnail is final for position " + event.position);
-        ZipEntryData entryData = zipEntries.get(event.position);
-        entryData.setFinal(true);
-        notifyItemChanged(event.position);
-    }
-
 
 }

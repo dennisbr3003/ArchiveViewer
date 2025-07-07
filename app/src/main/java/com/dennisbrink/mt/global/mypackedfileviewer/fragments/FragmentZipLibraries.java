@@ -21,6 +21,7 @@ import android.widget.TextView;
 import com.dennisbrink.mt.global.mypackedfileviewer.IZipApplication;
 import com.dennisbrink.mt.global.mypackedfileviewer.R;
 import com.dennisbrink.mt.global.mypackedfileviewer.events.DialogResultActionEvent;
+import com.dennisbrink.mt.global.mypackedfileviewer.events.UpdateLibraryLockState;
 import com.dennisbrink.mt.global.mypackedfileviewer.libraries.ThumbnailCache;
 import com.dennisbrink.mt.global.mypackedfileviewer.ZipApplication;
 import com.dennisbrink.mt.global.mypackedfileviewer.libraries.ZipDialogs;
@@ -106,6 +107,16 @@ public class FragmentZipLibraries extends Fragment implements IZipApplication {
     public void onStart() {
         super.onStart();
         EventBus.getDefault().register(this);
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN, sticky = true)
+    public void onUpdateLibraryLockState(UpdateLibraryLockState event) {
+        // Handle the event
+        // Update your data or UI
+        Log.d("DB1", "FragmentZipLibraries.onUpdateLibraryLockState: Event captured, execute logic position " + event.position);
+        adapter.notifyItemChanged(event.position); // This causes an endless loop
+
+        EventBus.getDefault().removeStickyEvent(event);
     }
 
     // Use @Subscribe to handle the Event

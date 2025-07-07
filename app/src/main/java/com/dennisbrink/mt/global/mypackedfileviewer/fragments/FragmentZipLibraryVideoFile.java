@@ -149,7 +149,8 @@ public class FragmentZipLibraryVideoFile extends Fragment implements IZipApplica
                     Log.d("DB1", "FragmentZipLibraryVideoFile.onViewCreated: Thumbnail not saved: " + e.getMessage());
                 }
                 // send a event that the thumbnail is set now and the ZipEntryData must be updated
-                EventBus.getDefault().post(new VideoThumbnailFinalEvent(startPosition));
+                Log.d("DB1", "FragmentZipLibraryVideoFile.onViewCreated: sending VideoThumbnailFinalEvent for " + startPosition);
+                EventBus.getDefault().post(new VideoThumbnailFinalEvent(startPosition, target, source, zipkey));
             });
         }
         // -- Setup VLC
@@ -172,7 +173,7 @@ public class FragmentZipLibraryVideoFile extends Fragment implements IZipApplica
                     media.release();
                     mediaPlayer.release();
                     libVLC.release();
-                    tempFile.delete(); // Delete the temp file when done
+                    // tempFile.delete(); // Delete the temp file when done
                 } else {
                     // Start - stop
                     mediaPlayer.stop();
@@ -297,7 +298,14 @@ public class FragmentZipLibraryVideoFile extends Fragment implements IZipApplica
         try {
             retriever.setDataSource(videoPath);
             // Extract frame at the specified time (ms)
-            return retriever.getFrameAtTime(1000000, MediaMetadataRetriever.OPTION_CLOSEST_SYNC);
+            Bitmap originalThumbnail = retriever.getFrameAtTime(1000000, MediaMetadataRetriever.OPTION_CLOSEST_SYNC);
+            // Resize the thumbnail to 45x45
+            if (originalThumbnail != null) {
+                return Bitmap.createScaledBitmap(originalThumbnail, 45, 45, true);
+            } else {
+                Log.d("DB1", "FragmentZipLibraryVideoFile.createVideoThumbnail: Thumbnail = null");
+                return placeholder;
+            }
         } catch (Exception e) {
             Log.d("DB1", "FragmentZipLibraryVideoFile.createVideoThumbnail: No thumbnail created: " + e.getMessage());
             return placeholder;

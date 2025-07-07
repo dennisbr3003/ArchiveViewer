@@ -17,6 +17,7 @@ import com.dennisbrink.mt.global.mypackedfileviewer.fragments.FragmentZipLibrari
 import com.dennisbrink.mt.global.mypackedfileviewer.fragments.FragmentZipLibrary;
 import com.dennisbrink.mt.global.mypackedfileviewer.fragments.FragmentZipLibraryFile;
 import com.dennisbrink.mt.global.mypackedfileviewer.fragments.FragmentZipLibraryVideoFile;
+import com.dennisbrink.mt.global.mypackedfileviewer.libraries.ZipUtilities;
 import com.dennisbrink.mt.global.mypackedfileviewer.structures.ZipEntryData;
 import com.dennisbrink.mt.global.mypackedfileviewer.structures.ZipLibrary;
 
@@ -24,7 +25,9 @@ import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
-public class ZipLibraryActivity extends AppCompatActivity implements IZipApplication  {
+import java.util.List;
+
+public class ZipLibraryActivity extends AppCompatActivity  {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,16 +73,13 @@ public class ZipLibraryActivity extends AppCompatActivity implements IZipApplica
     // Use @Subscribe to handle the Event
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onOpenZipLibraryEvent(OpenZipLibraryEvent event) {
-        Log.d("DB1", "ZipLibraryActivity.onOpenZipLibraryEvent: Event captured, open library fragment for position " + event.position);
+        Log.d("DB1", "ZipLibraryActivity.onOpenZipLibraryEvent: Event captured");
         loadFragmentZipLibrary(event.position);
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onOpenZipLibraryFileEvent(OpenZipLibraryFileEvent event) {
-        Log.d("DB1", "ZipLibraryActivity.onOpenZipLibraryFileEvent: Event captured source: "
-                                + event.source + ", target: " + event.target + ", zipkey: " + event.zipkey
-                                + ", type: " + event.entryData.getFileType() + ", position: " + event.position
-                                + ", fileName: " + event.entryData.getFileName());
+        Log.d("DB1", "ZipLibraryActivity.onOpenZipLibraryFileEvent: Event captured");
         if(event.entryData.getFileType().equals(EFileTypes.VIDEO)) {
             Log.d("DB1", "ZipLibraryActivity.onOpenZipLibraryFileEvent: start video fragment");
             loadFragmentZipLibraryVideoFile(event.position, event.source, event.target, event.zipkey, event.entryData);
@@ -87,6 +87,19 @@ public class ZipLibraryActivity extends AppCompatActivity implements IZipApplica
             Log.d("DB1", "ZipLibraryActivity.onOpenZipLibraryFileEvent: start image fragment");
             loadFragmentZipLibraryFile(event.position, event.source, event.target, event.zipkey);
         }
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onVideoThumbnailFinalEvent(VideoThumbnailFinalEvent event) {
+        Log.d("DB1", "ZipLibraryActivity.onVideoThumbnailFinalEvent: Event captured");
+        // get the extra data from this particular library
+        List<ZipEntryData> zipEntries = ZipUtilities.getZipContentsFromAsset(event.source, event.target, event.zipkey);
+        // get the entry for which the data has to be updated
+        ZipEntryData entryData = zipEntries.get(event.position);
+        // update the data
+        entryData.setFinal(true);
+        // save zipEntries back to file so the updated data can be used
+        ZipUtilities.saveZipEntriesToFile(event.target, zipEntries);
     }
 
     private void loadFragmentZipLibrary(int position) {

@@ -39,7 +39,8 @@ public class ZipLibraryAdapter extends RecyclerView.Adapter<ZipLibraryAdapter.Li
     private boolean blockClickListener = false;
     private boolean showDialog = false;
     public ZipLibraryAdapter() {}
-
+    ZipLibraryExtraData zipLibraryExtraData;
+    ZipLibrary library;
     @NonNull
     @Override
     public LibraryViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -56,7 +57,7 @@ public class ZipLibraryAdapter extends RecyclerView.Adapter<ZipLibraryAdapter.Li
 
         try {
 
-            ZipLibrary library = ZipApplication.getLibraries().get(position);
+            library = ZipApplication.getLibraries().get(position);
             holder.nameTextView.setText(library.getName());
 
             try {
@@ -65,7 +66,9 @@ public class ZipLibraryAdapter extends RecyclerView.Adapter<ZipLibraryAdapter.Li
                 throw new RuntimeException(e);
             }
 
-            ZipLibraryExtraData zipLibraryExtraData = ZipUtilities.getZipLibraryExtraData(library.getTarget(), library.getSource(), library.getZipkey());
+            // dit is het probleem, hier gaat het niet goed in als ik een dataItemChanged(i) doe, dat komt omdat hij hieronder opnieuw
+            // wordt aangemaakt en dan wordt er weer een event verstuurd en dus komen we dan weer hier in een eindeloze loop
+            zipLibraryExtraData = ZipUtilities.getZipLibraryExtraData(library.getTarget(), library.getSource(), library.getZipkey(), position);
 
             holder.libraryError.setVisibility(View.GONE);
             holder.libraryWarning.setVisibility(View.GONE);
