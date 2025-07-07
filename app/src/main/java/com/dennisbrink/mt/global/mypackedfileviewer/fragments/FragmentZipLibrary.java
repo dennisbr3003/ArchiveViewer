@@ -15,16 +15,27 @@ import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
+import com.dennisbrink.mt.global.mypackedfileviewer.IZipApplication;
 import com.dennisbrink.mt.global.mypackedfileviewer.R;
+import com.dennisbrink.mt.global.mypackedfileviewer.events.VideoThumbnailFinalEvent;
 import com.dennisbrink.mt.global.mypackedfileviewer.structures.ZipEntryData;
 import com.dennisbrink.mt.global.mypackedfileviewer.ZipFileAdapter;
 import com.dennisbrink.mt.global.mypackedfileviewer.libraries.ZipUtilities;
+
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 
 import java.util.List;
 import java.util.Objects;
 
 
-public class FragmentZipLibrary extends Fragment {
+public class FragmentZipLibrary extends Fragment implements IZipApplication {
+
+    ZipFileAdapter adapter;
+    List<ZipEntryData> zipContent;
+    private String source, target, zipkey, name;
+    private int position;
 
     public static FragmentZipLibrary newInstance(String source, String target, String name, String zipkey, int position) {
         FragmentZipLibrary fragment = new FragmentZipLibrary();
@@ -51,11 +62,11 @@ public class FragmentZipLibrary extends Fragment {
         Bundle args = getArguments();
 
         assert args != null;
-        String source = args.getString("source");
-        String target = args.getString("target");
-        String name = args.getString("name");
-        String zipkey = args.getString("zipkey");
-        int position = args.getInt("position", -1);
+        source = args.getString("source");
+        target = args.getString("target");
+        name = args.getString("name");
+        zipkey = args.getString("zipkey");
+        position = args.getInt("position", -1);
 
         Log.d("DB1", "FragmentZipLibrary.onCreateView: position after opening fragment: " + position);
 
@@ -65,7 +76,7 @@ public class FragmentZipLibrary extends Fragment {
 
         targetTextView.setText(name);
 
-        List<ZipEntryData> zipContent = ZipUtilities.getZipContentsFromAsset(source, target, zipkey);
+        zipContent = ZipUtilities.getZipContentsFromAsset(source, target, zipkey);
 
         String summary = getString(
                 R.string.file_summary,
@@ -80,7 +91,7 @@ public class FragmentZipLibrary extends Fragment {
         ImageButton buttonDown = view.findViewById(R.id.imageButtonDown);
         buttonDown.setOnClickListener(v -> smoothScrollToPosition(recyclerView, requireActivity(), zipContent.size() - 1));
 
-        ZipFileAdapter adapter = new ZipFileAdapter(zipContent, position);
+        adapter = new ZipFileAdapter(zipContent, position);
         recyclerView.setAdapter(adapter);
 
         return view;

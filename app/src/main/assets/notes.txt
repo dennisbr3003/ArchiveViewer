@@ -10,3 +10,35 @@ You can create new project using java language in Android Studio Meerkat version
 
 toolbar icons: Gentlecons Interface Icons Collection
 https://www.svgrepo.com/collection/gentlecons-interface-icons/1?search=
+
+
+HandBrake Video Compression Settings for Android:
+
+1. **Preset Selection:**
+   - Use a device preset: "Android 720p30" or "Android 480p30" for compatibility.
+
+2. **Video Settings:**
+   - Codec: H.264 (x264)
+   - Framerate (FPS): 48
+   - Framerate Setting: Constant Framerate
+   - Quality: Constant Quality RF slider between 20-23 (25)
+
+3. **Audio Settings:**
+   - Codec: AAC
+   - Bitrate: 128 kbps
+
+4. **Dimensions:**
+   - Resolution: Adjust to match device screen size (720p or 480p recommended)
+
+5. **Filters:**
+   - Use defaults unless specific adjustments are necessary.
+
+6. **Advanced Settings (optional):**
+   - Adjust only if further file size reduction is needed; be cautious as it may impact compatibility.
+
+7. **Process:**
+   - Save destination: Set your destination folder
+   - Start Encoding: Click “Start Encode” to compress the video
+
+8. **Verification:**
+   - Test the output video on your Android device to ensure quality and compatibility.

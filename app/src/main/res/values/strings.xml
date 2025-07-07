@@ -28,4 +28,6 @@
     <string name="textmessage_delete_extra_data">Are you sure you want to delete all extra generated data, this will cause the data to be regenerated which may produce a performance hick-up</string>
     <string name="textmessage_delete_cached_data">Are you sure you want to delete all thumbnails, this will cause the thumbnails to be regenerated which may produce a performance hick-up</string>
     <string name="file_summary">%1$d files, %2$s</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

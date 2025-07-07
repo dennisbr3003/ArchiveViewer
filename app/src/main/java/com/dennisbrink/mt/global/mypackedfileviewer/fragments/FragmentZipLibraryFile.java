@@ -14,19 +14,26 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.dennisbrink.mt.global.mypackedfileviewer.IZipApplication;
 import com.dennisbrink.mt.global.mypackedfileviewer.ImageAdapter;
 import com.dennisbrink.mt.global.mypackedfileviewer.R;
+import com.dennisbrink.mt.global.mypackedfileviewer.events.VideoThumbnailFinalEvent;
 import com.dennisbrink.mt.global.mypackedfileviewer.structures.ZipEntryData;
 import com.dennisbrink.mt.global.mypackedfileviewer.libraries.ZipUtilities;
 
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
+
 import java.util.List;
 
-public class FragmentZipLibraryFile extends Fragment {
+public class FragmentZipLibraryFile extends Fragment implements IZipApplication {
 
     private LinearLayoutManager layoutManager;
     private int startPosition = 0;
     private String source, target, zipkey;
-
+    List<ZipEntryData> zipContent;
+    ImageAdapter adapter;
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -46,7 +53,8 @@ public class FragmentZipLibraryFile extends Fragment {
             zipkey = getArguments().getString("zipkey");
         }
 
-        List<ZipEntryData> zipContent = ZipUtilities.getZipContentsFromAsset(source, target, zipkey);
+//        List<ZipEntryData>
+        zipContent = ZipUtilities.getZipContentsFromAsset(source, target, zipkey);
         RecyclerView recyclerView = view.findViewById(R.id.recyclerView4);
         layoutManager = new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false);
         recyclerView.setLayoutManager(layoutManager);
@@ -54,7 +62,8 @@ public class FragmentZipLibraryFile extends Fragment {
         PagerSnapHelper snapHelper = new PagerSnapHelper();
         snapHelper.attachToRecyclerView(recyclerView);
 
-        ImageAdapter adapter = new ImageAdapter(zipContent, zipkey, target);
+//        ImageAdapter
+        adapter = new ImageAdapter(zipContent, zipkey, target);
         recyclerView.setAdapter(adapter);
 
         Log.d("DB1", "FragmentZipLibraryFile.onViewCreated: Position " + startPosition);
@@ -70,6 +79,7 @@ public class FragmentZipLibraryFile extends Fragment {
         }
 
     }
+
 
     @Override
     public void onSaveInstanceState(@NonNull Bundle outState) {

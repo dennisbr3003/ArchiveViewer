@@ -5,12 +5,16 @@ import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.ThumbnailUtils;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
 import com.dennisbrink.mt.global.mypackedfileviewer.IZipApplication;
 import com.dennisbrink.mt.global.mypackedfileviewer.LockStatus;
 import com.dennisbrink.mt.global.mypackedfileviewer.R;
 import com.dennisbrink.mt.global.mypackedfileviewer.ZipApplication;
+import com.dennisbrink.mt.global.mypackedfileviewer.EVideoExtensions;
+import com.dennisbrink.mt.global.mypackedfileviewer.events.UpdateLibraryLockState;
 import com.dennisbrink.mt.global.mypackedfileviewer.structures.Coordinates;
 import com.dennisbrink.mt.global.mypackedfileviewer.structures.ZipEntryData;
 import com.dennisbrink.mt.global.mypackedfileviewer.structures.ZipLibraryExtraData;
@@ -19,6 +23,8 @@ import com.google.gson.reflect.TypeToken;
 
 import net.lingala.zip4j.ZipFile;
 import net.lingala.zip4j.model.FileHeader;
+
+import org.greenrobot.eventbus.EventBus;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -42,11 +48,11 @@ public class ZipUtilities implements IZipApplication {
     static AssetManager assetManager = ZipApplication.getAppContext().getAssets();
     static String[] assets;
    // static ZipFile zipFile;
-
+   //private static ZipLibraryExtraData zipLibraryExtraData;
     public static void initAssetManager() throws IOException {
         assets = assetManager.list("");
     }
-
+    ZipLibraryExtraData zipLibraryExtraData = new ZipLibraryExtraData();
     private static Boolean checkIfFileExistsInAssetsFolder(String target) {
         for (String asset : assets) {
             if (asset.equals(target)) {
@@ -101,9 +107,21 @@ public class ZipUtilities implements IZipApplication {
         return true; // password correct
 
     }
-    public static ZipLibraryExtraData getZipLibraryExtraData(String target, String source, String zipkey) {
+    public static ZipLibraryExtraData getZipLibraryExtraData(String target, String source, String zipkey, int position) {
 
         ZipLibraryExtraData zipLibraryExtraData = new ZipLibraryExtraData();
+        String strData = loadDataFromFile("ED_" + target, FILE_EXTRA_DIR);
+
+        if(!strData.isEmpty()){
+            try {
+                zipLibraryExtraData = jsonToZipLibraryExtraDataObject(strData);
+                Log.d("DB1", "ZipUtilities.getZipLibraryExtraData: Extra data retrieved from file " + FILE_EXTRA_DIR + "ED_" + target);
+            } catch(Exception e) {
+                // something went wrong so we must continue with actually iterating file headers
+                Log.d("DB1", "ZipUtilities.getZipLibraryExtraData: Extra data was found but could not be retrieved from file " + FILE_EXTRA_DIR + "ED_" + target);
+            }
+        }
+
         File tempFile = new File(ZipApplication.getAppContext().getFilesDir(), target);
 
         if(!tempFile.exists()){
@@ -114,16 +132,30 @@ public class ZipUtilities implements IZipApplication {
             zipLibraryExtraData.setInAssets(false);
             zipLibraryExtraData.setErrorMessage(ZipApplication.getAppContext().getString(R.string.archive_not_found));
         }
-
         if(tempFile.exists()) {
-            // first check the file without opening it
             try (ZipFile zipFile = new ZipFile(tempFile)) {
                 zipLibraryExtraData.setValidZip(zipFile.isValidZipFile());
                 if (zipFile.isValidZipFile()) {
                     if (!zipkey.isEmpty() && zipFile.isEncrypted()) {
-                        zipLibraryExtraData.setLockState(LockStatus.LOCKED_PASSWORD);
-                        if(!isValidZipPassword(target, zipkey)){
-                            zipLibraryExtraData.setLockState(LockStatus.LOCKED_CORRUPTED);
+
+                        if (zipLibraryExtraData.getLockState() == null) zipLibraryExtraData.setLockState(LockStatus.LOCKED_PASSWORD);
+
+                        ZipLibraryExtraData finalZipLibraryExtraData = zipLibraryExtraData;
+                        ZipLibraryExtraData finalZipLibraryExtraData1 = zipLibraryExtraData;
+
+                        if(!zipLibraryExtraData.getLockState().equals(LockStatus.LOCKED_CORRUPTED)) {
+                            new Thread(() -> {
+                                if (!isValidZipPassword(target, zipkey)) {
+                                    synchronized (finalZipLibraryExtraData) {
+                                        finalZipLibraryExtraData1.setLockState(LockStatus.LOCKED_CORRUPTED);
+                                        ZipLibraryExtraData finalZipLibraryExtraData2 = jsonToZipLibraryExtraDataObject(strData);
+                                        finalZipLibraryExtraData2.setLockState(LockStatus.LOCKED_CORRUPTED);
+                                        saveDataToFile("ED_" + target, FILE_EXTRA_DIR, zipLibraryExtraDataObjectToJson(finalZipLibraryExtraData2));
+                                    }
+                                    Log.d("DB1", "ZipUtilities.getZipLibraryExtraData: lock state after update in thread: " + finalZipLibraryExtraData.getLockState());
+                                    EventBus.getDefault().postSticky(new UpdateLibraryLockState(target, position));
+                                }
+                            }).start();
                         }
                     }
                     if (zipkey.isEmpty() && zipFile.isEncrypted()) {
@@ -139,7 +171,6 @@ public class ZipUtilities implements IZipApplication {
                 zipLibraryExtraData.setLockState(LockStatus.UNKNOWN);
             }
 
-            
             try (ZipFile zipFile = new ZipFile(tempFile, zipkey.toCharArray())) {
                 zipLibraryExtraData.setFileDate(tempFile.lastModified());
                 zipLibraryExtraData.setFileSize(tempFile.length());
@@ -162,8 +193,18 @@ public class ZipUtilities implements IZipApplication {
             }
         }
 
+        saveDataToFile("ED_" + target, FILE_EXTRA_DIR, zipLibraryExtraDataObjectToJson(zipLibraryExtraData));
         return zipLibraryExtraData;
 
+    }
+
+    private static String zipLibraryExtraDataObjectToJson(ZipLibraryExtraData zipLibraryExtraData) {
+        Gson gson = new Gson();
+        return gson.toJson(zipLibraryExtraData);
+    }
+    private static ZipLibraryExtraData jsonToZipLibraryExtraDataObject(String jsonString) {
+        Gson gson = new Gson();
+        return gson.fromJson(jsonString, ZipLibraryExtraData.class);
     }
 
     public static long getZipLibrarySize(String target, String source) {
@@ -215,25 +256,29 @@ public class ZipUtilities implements IZipApplication {
         return dateTime.format(formatter);
     }
 
-    public static Bitmap createThumbnail(InputStream inputStream, int width, int height, Bitmap placeholder) {
+    public static Bitmap createThumbnail(InputStream inputStream, int width, int height, Bitmap placeholder, String fileName) {
 
         Bitmap thumbnail = null;
 
-        try {
-            // Attempt to decode the input stream into a bitmap
-            Bitmap originalBitmap = BitmapFactory.decodeStream(inputStream);
+        // check if it is a video extension before trying to create a thumbnail
+        if(!EVideoExtensions.contains(getFileExtension(fileName))) {
+            try {
+                // Attempt to decode the input stream into a bitmap
+                Bitmap originalBitmap = BitmapFactory.decodeStream(inputStream);
 
-            // Check if the decoding failed, possibly due to unsupported format
-            if (originalBitmap != null) {
-                // Create the thumbnail
-                thumbnail = ThumbnailUtils.extractThumbnail(originalBitmap, width, height);
-            } else {
-                Log.d("DB1", "ZipUtilities.createThumbnail: Decoding failed: Unsupported file format or corrupt image.");
+                // Check if the decoding failed, possibly due to unsupported format
+                if (originalBitmap != null) {
+                    // Create the thumbnail
+                    thumbnail = ThumbnailUtils.extractThumbnail(originalBitmap, width, height);
+                } else {
+                    Log.d("DB1", "ZipUtilities.createThumbnail: Decoding failed: Unsupported file format or corrupt image.");
+                }
+            } catch (Exception e) {
+                Log.d("DB1", "ZipUtilities.createThumbnail: Thumbnail generation failed: " + e.getMessage());
             }
-        } catch (Exception e) {
-            Log.d("DB1", "ZipUtilities.createThumbnail: Thumbnail generation failed: " + e.getMessage());
+        } else {
+            Log.d("DB1", "ZipUtilities.createThumbnail: file is found to be a video file");
         }
-
         return thumbnail != null ? thumbnail : placeholder;
 
     }
@@ -303,12 +348,12 @@ public class ZipUtilities implements IZipApplication {
                 );
                 data.setCacheName(target, String.valueOf(fileHeader.getFileName().hashCode()));
                 data.setCacheFolder(target);
+                data.setFinal(false);
                 entryDataList.add(data);
             }
 
             // got the extra data here, we now save it for quick extraction next time
-            strData = zipEntryDataListToJson(entryDataList); // convert the list to a string
-            saveDataToFile(target, FILE_EXTRA_DIR, strData); // save the string
+            saveDataToFile(target, FILE_EXTRA_DIR, zipEntryDataListToJson(entryDataList));
             Log.d("DB1", "ZipUtilities.getZipContentsFromAsset: Extra data saved to file " + FILE_EXTRA_DIR + target);
 
         } catch (Exception e) {
@@ -319,6 +364,8 @@ public class ZipUtilities implements IZipApplication {
     }
 
     public static void saveDataToFile(String fileName, String folder, String data) {
+
+        Log.d("DB1", "ZipUtilities.saveDataToFile: saving data for -> " + data);
 
         File extraDataDir = new File(ZipApplication.getAppContext().getFilesDir(), folder);
         if (!extraDataDir.exists()) extraDataDir.mkdirs();
@@ -373,6 +420,27 @@ public class ZipUtilities implements IZipApplication {
     public static Coordinates jsonToCoordinates(String jsonString) {
         Gson gson = new Gson();
         return gson.fromJson(jsonString, Coordinates.class);
+    }
+
+
+
+    public static void saveByteDataToFile(String fileName, String folder, byte[] data) {
+        File extraDataDir = new File(ZipApplication.getAppContext().getFilesDir(), folder);
+        if (!extraDataDir.exists()) extraDataDir.mkdirs();
+
+        File file = new File(extraDataDir, fileName);
+        try (FileOutputStream fos = new FileOutputStream(file)) {
+            fos.write(data);
+            fos.flush();
+        } catch (IOException e) {
+            // do nothing, we just have no file that's all
+            Log.d("DB1", "ZipUtilities.saveByteDataToFile: Non lethal error saving data -> " + e.getMessage());
+        }
+
+    }
+
+    public static void saveZipEntriesToFile(String target, List<ZipEntryData> zipEntries) {
+        saveDataToFile(target, FILE_EXTRA_DIR, zipEntryDataListToJson(zipEntries));
     }
 
 }

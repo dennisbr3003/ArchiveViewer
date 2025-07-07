@@ -15,11 +15,14 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.dennisbrink.mt.global.mypackedfileviewer.events.OpenZipLibraryFileEvent;
+import com.dennisbrink.mt.global.mypackedfileviewer.events.VideoThumbnailFinalEvent;
 import com.dennisbrink.mt.global.mypackedfileviewer.libraries.ThumbnailCache;
 import com.dennisbrink.mt.global.mypackedfileviewer.libraries.ZipUtilities;
 import com.dennisbrink.mt.global.mypackedfileviewer.structures.ZipEntryData;
 
 import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,11 +30,11 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class ZipFileAdapter extends RecyclerView.Adapter<ZipFileAdapter.ViewHolder> {
+public class ZipFileAdapter extends RecyclerView.Adapter<ZipFileAdapter.ViewHolder> implements IZipApplication {
     private final String libraryTarget, libraryZipKey, librarySource;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private final Handler uiHandler = new Handler(Looper.getMainLooper());
-    private final List<ZipEntryData> zipEntries;
+    private List<ZipEntryData> zipEntries;
     ThumbnailCache thumbnailCache = new ThumbnailCache();
     Bitmap placeholder = BitmapFactory.decodeResource(ZipApplication.getAppContext().getResources(), R.drawable.no_image_small);
 
@@ -40,7 +43,6 @@ public class ZipFileAdapter extends RecyclerView.Adapter<ZipFileAdapter.ViewHold
         this.libraryTarget = ZipApplication.getLibraries().get(libraryPosition).getTarget();
         this.libraryZipKey = ZipApplication.getLibraries().get(libraryPosition).getZipkey();
         this.librarySource = ZipApplication.getLibraries().get(libraryPosition).getSource();
-
     }
 
     @NonNull
@@ -64,7 +66,7 @@ public class ZipFileAdapter extends RecyclerView.Adapter<ZipFileAdapter.ViewHold
                 executorService.execute(() -> {
                     InputStream inputStream = ZipUtilities.getImageInputStream(entryData.getFileName(), libraryTarget, libraryZipKey);
                     if (inputStream != null) {
-                        Bitmap thumbnail = ZipUtilities.createThumbnail(inputStream, 45, 45, placeholder);
+                        Bitmap thumbnail = ZipUtilities.createThumbnail(inputStream, 45, 45, placeholder, entryData.getFileName());
                         try {
                             thumbnailCache.saveThumbnail(entryData.getCacheFolder(), entryData.getCacheName(), thumbnail);
                             if(position==0){ // save the first image as library thumbnail
@@ -91,7 +93,7 @@ public class ZipFileAdapter extends RecyclerView.Adapter<ZipFileAdapter.ViewHold
             holder.thumbNail.setImageBitmap(entryData.getThumbnail());
         }
 
-        holder.itemView.setOnClickListener(v -> EventBus.getDefault().post(new OpenZipLibraryFileEvent(position, librarySource, libraryTarget, libraryZipKey)));
+        holder.itemView.setOnClickListener(v -> EventBus.getDefault().post(new OpenZipLibraryFileEvent(position, librarySource, libraryTarget, libraryZipKey, entryData)));
 
     }
 

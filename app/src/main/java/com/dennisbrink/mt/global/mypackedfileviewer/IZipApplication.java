@@ -2,6 +2,7 @@ package com.dennisbrink.mt.global.mypackedfileviewer;
 
 public interface IZipApplication {
     String CACHE_DIR = "thumbnails/";
+    String VIDEO_FILES_DIR = "largeFiles/";
     String FILE_EXTRA_DIR = "zipFileExtraData/";
     String COORDINATE_DIR = "coordinates/";
     String COORDINATE_FILENAME = "user_coordinates";
@@ -10,4 +11,5 @@ public interface IZipApplication {
     String DELETE_EXTRA_DATA = "delete_all_extra_generated_data";
     String DELETE_CACHED_DATA = "delete_all_cached_thumbnails";
     String ANSWER = "answer";
+    String VIDEO_FILES_PREFIX = "VID_";
 }
