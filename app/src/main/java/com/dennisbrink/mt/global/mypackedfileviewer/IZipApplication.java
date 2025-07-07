@@ -12,4 +12,5 @@ public interface IZipApplication {
     String DELETE_CACHED_DATA = "delete_all_cached_thumbnails";
     String ANSWER = "answer";
     String VIDEO_FILES_PREFIX = "VID_";
+    String LIB_EXTRA_DATA_PREFIX = "ED_";
 }

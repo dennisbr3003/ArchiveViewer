@@ -66,22 +66,19 @@ public class ZipLibraryAdapter extends RecyclerView.Adapter<ZipLibraryAdapter.Li
                 throw new RuntimeException(e);
             }
 
-            // dit is het probleem, hier gaat het niet goed in als ik een dataItemChanged(i) doe, dat komt omdat hij hieronder opnieuw
-            // wordt aangemaakt en dan wordt er weer een event verstuurd en dus komen we dan weer hier in een eindeloze loop
+            // gather (and save) all possible asset data without actually opening the file
             zipLibraryExtraData = ZipUtilities.getZipLibraryExtraData(library.getTarget(), library.getSource(), library.getZipkey(), position);
 
             holder.libraryError.setVisibility(View.GONE);
             holder.libraryWarning.setVisibility(View.GONE);
             holder.sourceTextView.setVisibility(View.VISIBLE);
 
-            // check if there is a thumbnail and the lock state. If you have to enter a password manually
-            // it is assumed sensitive data is in there. A thumbnail may tell an unexpected tale
+            // check for a thumbnail. If found load it, else load the placeholder
             if (thumbnailCache.isThumbnailCached("", "cache_" + library.getSource().hashCode())) {
                 holder.libraryImageView.setImageBitmap(thumbnailCache.loadThumbnail("", "cache_" + library.getSource().hashCode()));
             } else { // otherwise use the placeholder
                 holder.libraryImageView.setImageResource(R.drawable.archive);
             }
-
             holder.libraryStateImageview.setImageResource(R.drawable.lib_ok);
 
             if (!zipLibraryExtraData.getIsCopied() && zipLibraryExtraData.getInAssets()) {
@@ -140,17 +137,19 @@ public class ZipLibraryAdapter extends RecyclerView.Adapter<ZipLibraryAdapter.Li
 
                 if (blockClickListener) return;
 
-                // block click on invalid and not existing archives
-                if ((!zipLibraryExtraData.getValidZip() && zipLibraryExtraData.getIsCopied()) || !zipLibraryExtraData.getInAssets())
-                    return;
+                // load the file that we saved with the extra library data
+                ZipLibraryExtraData zipLibraryExtraDataHolder = ZipUtilities.getZipLibraryExtraDataObjectFromFile(ZipApplication.getLibraries().get(position).getTarget());
+                // block click on invalid and not existing assets
+                if (!zipLibraryExtraDataHolder.getValidZip() && zipLibraryExtraDataHolder.getIsCopied()) return;
+                if (!zipLibraryExtraDataHolder.getInAssets()) return;
 
                 // what to do if there is no file copied and no password. we need to copy it and check
                 // if the file is encrypted. If it is, show the dialog, if it's not open it because there is no password.
                 // also we need to check if the password is correct (also if the password is already known). We should always
                 // copy the file here if it is not already
-
                 blockClickListener = true;
 
+                // show the infinite progress bar
                 if (holder.progressBarLib != null) {
                     if (holder.progressBarLib.getVisibility() == View.INVISIBLE) {
                         holder.progressBarLib.setVisibility(View.VISIBLE);
@@ -163,9 +162,13 @@ public class ZipLibraryAdapter extends RecyclerView.Adapter<ZipLibraryAdapter.Li
                 // 2. check zip file vitals
                 // 3. decide if we need to show the dialog
                 new Handler(Looper.getMainLooper()).postDelayed(() -> {
+
                     if (ZipUtilities.copyZipFromAsset(ZipApplication.getLibraries().get(position).getTarget(),
                             ZipApplication.getLibraries().get(position).getSource())) {
-                        File tempFile = new File(ZipApplication.getAppContext().getFilesDir(), ZipApplication.getLibraries().get(position).getTarget());
+
+                        File tempFile = new File(ZipApplication.getAppContext().getFilesDir(),
+                                ZipApplication.getLibraries().get(position).getTarget());
+
                         try (ZipFile zipFile = new ZipFile(tempFile)) {
                             if (zipFile.isValidZipFile()) {
                                 if (zipFile.isEncrypted()) {
@@ -177,6 +180,13 @@ public class ZipLibraryAdapter extends RecyclerView.Adapter<ZipLibraryAdapter.Li
                                         // try the password, if it is ok then we move on else we do not and ask the correct one
                                         showDialog = !ZipUtilities.isValidZipPassword(ZipApplication.getLibraries().get(position).getTarget(),
                                                       ZipApplication.getLibraries().get(position).getZipkey()); // password valid?
+                                        if(showDialog){
+                                            // here we know the password is not valid. We updated the lock state now
+                                            zipLibraryExtraDataHolder.setLockState(LockStatus.LOCKED_CORRUPTED);
+                                            Log.d("DB1", "Target: ED_" + ZipApplication.getLibraries().get(position).getTarget());
+                                            ZipUtilities.saveZipLibraryExtraDataObjectToFile(ZipApplication.getLibraries().get(position).getTarget(), zipLibraryExtraDataHolder);
+                                            notifyItemChanged(position);
+                                        }
                                     }
                                 }
                             }

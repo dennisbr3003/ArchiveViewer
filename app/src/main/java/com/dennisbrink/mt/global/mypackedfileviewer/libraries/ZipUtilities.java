@@ -14,6 +14,7 @@ import com.dennisbrink.mt.global.mypackedfileviewer.LockStatus;
 import com.dennisbrink.mt.global.mypackedfileviewer.R;
 import com.dennisbrink.mt.global.mypackedfileviewer.ZipApplication;
 import com.dennisbrink.mt.global.mypackedfileviewer.EVideoExtensions;
+import com.dennisbrink.mt.global.mypackedfileviewer.ZipLibraryActivity;
 import com.dennisbrink.mt.global.mypackedfileviewer.events.UpdateLibraryLockState;
 import com.dennisbrink.mt.global.mypackedfileviewer.structures.Coordinates;
 import com.dennisbrink.mt.global.mypackedfileviewer.structures.ZipEntryData;
@@ -109,59 +110,55 @@ public class ZipUtilities implements IZipApplication {
     }
     public static ZipLibraryExtraData getZipLibraryExtraData(String target, String source, String zipkey, int position) {
 
-        ZipLibraryExtraData zipLibraryExtraData = new ZipLibraryExtraData();
-        String strData = loadDataFromFile("ED_" + target, FILE_EXTRA_DIR);
+        // this is the data that can be gathered from the
+        // asset folder without actually copying the file
+        // we do not check for a valid password here because
+        // that is done when the file is actually opened
 
-        if(!strData.isEmpty()){
-            try {
-                zipLibraryExtraData = jsonToZipLibraryExtraDataObject(strData);
-                Log.d("DB1", "ZipUtilities.getZipLibraryExtraData: Extra data retrieved from file " + FILE_EXTRA_DIR + "ED_" + target);
-            } catch(Exception e) {
-                // something went wrong so we must continue with actually iterating file headers
-                Log.d("DB1", "ZipUtilities.getZipLibraryExtraData: Extra data was found but could not be retrieved from file " + FILE_EXTRA_DIR + "ED_" + target);
-            }
+        ZipLibraryExtraData zipLibraryExtraData;
+        // check for a saved version if any
+        zipLibraryExtraData = getZipLibraryExtraDataObjectFromFile(target);
+        if (zipLibraryExtraData == null) {
+            zipLibraryExtraData = new ZipLibraryExtraData();
         }
-
         File tempFile = new File(ZipApplication.getAppContext().getFilesDir(), target);
 
         if(!tempFile.exists()){
             zipLibraryExtraData.setCopied(false);
             zipLibraryExtraData.setWarningMessage(ZipApplication.getAppContext().getString(R.string.archive_is_not_copied));
-        }
-        if(!checkIfFileExistsInAssetsFolder(source)) {
-            zipLibraryExtraData.setInAssets(false);
-            zipLibraryExtraData.setErrorMessage(ZipApplication.getAppContext().getString(R.string.archive_not_found));
-        }
-        if(tempFile.exists()) {
+            zipLibraryExtraData.setLockState(LockStatus.UNKNOWN);
+
+            if(checkIfFileExistsInAssetsFolder(source)){
+                try {
+                    zipLibraryExtraData.setFileSize(assetManager.open(source).available());
+                    zipLibraryExtraData.setInAssets(true);
+                } catch (IOException e) {
+                    zipLibraryExtraData.setFileSize(0);
+                    zipLibraryExtraData.setInAssets(false);
+                    zipLibraryExtraData.setErrorMessage(ZipApplication.getAppContext().getString(R.string.archive_not_found)); // override previous message if any
+                }
+            } else {
+                zipLibraryExtraData.setInAssets(false);
+                zipLibraryExtraData.setErrorMessage(ZipApplication.getAppContext().getString(R.string.archive_not_found)); // override previous message if any
+                zipLibraryExtraData.setFileSize(0);
+            }
+        } else {
             try (ZipFile zipFile = new ZipFile(tempFile)) {
+
                 zipLibraryExtraData.setValidZip(zipFile.isValidZipFile());
+                zipLibraryExtraData.setCopied(true);
+                zipLibraryExtraData.setInAssets(true);
+
                 if (zipFile.isValidZipFile()) {
-                    if (!zipkey.isEmpty() && zipFile.isEncrypted()) {
-
-                        if (zipLibraryExtraData.getLockState() == null) zipLibraryExtraData.setLockState(LockStatus.LOCKED_PASSWORD);
-
-                        ZipLibraryExtraData finalZipLibraryExtraData = zipLibraryExtraData;
-                        ZipLibraryExtraData finalZipLibraryExtraData1 = zipLibraryExtraData;
-
-                        if(!zipLibraryExtraData.getLockState().equals(LockStatus.LOCKED_CORRUPTED)) {
-                            new Thread(() -> {
-                                if (!isValidZipPassword(target, zipkey)) {
-                                    synchronized (finalZipLibraryExtraData) {
-                                        finalZipLibraryExtraData1.setLockState(LockStatus.LOCKED_CORRUPTED);
-                                        ZipLibraryExtraData finalZipLibraryExtraData2 = jsonToZipLibraryExtraDataObject(strData);
-                                        finalZipLibraryExtraData2.setLockState(LockStatus.LOCKED_CORRUPTED);
-                                        saveDataToFile("ED_" + target, FILE_EXTRA_DIR, zipLibraryExtraDataObjectToJson(finalZipLibraryExtraData2));
-                                    }
-                                    Log.d("DB1", "ZipUtilities.getZipLibraryExtraData: lock state after update in thread: " + finalZipLibraryExtraData.getLockState());
-                                    EventBus.getDefault().postSticky(new UpdateLibraryLockState(target, position));
-                                }
-                            }).start();
+                    if(zipFile.isEncrypted()) {
+                        if (zipkey.isEmpty()) {
+                            zipLibraryExtraData.setLockState(LockStatus.LOCKED_NO_PASSWORD);
+                        } else {
+                            if(zipLibraryExtraData.getLockState() != LockStatus.LOCKED_CORRUPTED) {
+                                zipLibraryExtraData.setLockState(LockStatus.LOCKED_PASSWORD);
+                            }
                         }
-                    }
-                    if (zipkey.isEmpty() && zipFile.isEncrypted()) {
-                        zipLibraryExtraData.setLockState(LockStatus.LOCKED_NO_PASSWORD);
-                    }
-                    if (!zipFile.isEncrypted()) {
+                    } else {
                         zipLibraryExtraData.setLockState(LockStatus.NOT_LOCKED);
                     }
                 }
@@ -180,24 +177,20 @@ public class ZipUtilities implements IZipApplication {
                 zipLibraryExtraData.setErrorMessage(ZipApplication.getAppContext().getString(R.string.invalid_password));
                 zipLibraryExtraData.setLockState(LockStatus.LOCKED_CORRUPTED);
             }
-        } else {
-            zipLibraryExtraData.setLockState(LockStatus.UNKNOWN);
-            if(checkIfFileExistsInAssetsFolder(source)){
-                try {
-                    zipLibraryExtraData.setFileSize(assetManager.open(source).available());
-                } catch (IOException e) {
-                    zipLibraryExtraData.setFileSize(0);
-                }
-            } else {
-                zipLibraryExtraData.setFileSize(0);
-            }
         }
 
-        saveDataToFile("ED_" + target, FILE_EXTRA_DIR, zipLibraryExtraDataObjectToJson(zipLibraryExtraData));
+        saveZipLibraryExtraDataObjectToFile(target, zipLibraryExtraData);
         return zipLibraryExtraData;
 
     }
 
+    public static ZipLibraryExtraData getZipLibraryExtraDataObjectFromFile(String target){
+        return jsonToZipLibraryExtraDataObject(loadDataFromFile(LIB_EXTRA_DATA_PREFIX + target, FILE_EXTRA_DIR));
+    }
+
+    public static void saveZipLibraryExtraDataObjectToFile(String target, ZipLibraryExtraData zipLibraryExtraData){
+        saveDataToFile(LIB_EXTRA_DATA_PREFIX + target, FILE_EXTRA_DIR, zipLibraryExtraDataObjectToJson(zipLibraryExtraData));
+    }
     private static String zipLibraryExtraDataObjectToJson(ZipLibraryExtraData zipLibraryExtraData) {
         Gson gson = new Gson();
         return gson.toJson(zipLibraryExtraData);
