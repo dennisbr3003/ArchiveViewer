@@ -316,6 +316,7 @@ public class ZipUtilities implements IZipApplication {
             try {
                 entryDataList = jsonToZipEntryDataList(strData);
                 Log.d("DB1", "ZipUtilities.getZipContentsFromAsset: Extra data retrieved from file " + FILE_EXTRA_DIR + target);
+                Log.d("DB1", "ZipUtilities.getZipContentsFromAsset: Extra data: " + strData);
                 return entryDataList;
             } catch(Exception e) {
                 // something went wrong so we must continue with actually iterating file headers

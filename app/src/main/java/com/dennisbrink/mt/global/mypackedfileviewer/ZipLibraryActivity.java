@@ -103,19 +103,24 @@ public class ZipLibraryActivity extends AppCompatActivity  {
     }
 
     private void loadFragmentZipLibrary(int position) {
-        ZipLibrary item = ZipApplication.getLibraries().get(position);
-        FragmentZipLibrary fragment = FragmentZipLibrary.newInstance(
-                item.getSource(),
-                item.getTarget(),
-                item.getName(),
-                item.getZipkey(),
-                position
-        );
-        this.getSupportFragmentManager()
-                .beginTransaction()
-                .replace(R.id.fragmentContainer, fragment) // Use your FrameLayout's ID
-                .addToBackStack(null)
-                .commit();
+        Log.d("DB1", "ZipLibraryActivity.loadFragmentZipLibrary: load library content fragment");
+        try {
+            ZipLibrary item = ZipApplication.getLibraries().get(position);
+            FragmentZipLibrary fragment = FragmentZipLibrary.newInstance(
+                    item.getSource(),
+                    item.getTarget(),
+                    item.getName(),
+                    item.getZipkey(),
+                    position
+            );
+            this.getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragmentContainer, fragment) // Use your FrameLayout's ID
+                    .addToBackStack(null)
+                    .commit();
+        } catch(Exception e) {
+            Log.d("DB1", "ZipLibraryActivity.loadFragmentZipLibrary: Error loading fragment " + e.getMessage());
+        }
     }
 
     private void loadFragmentZipLibraryFile (int position, String source, String target, String zipkey) {

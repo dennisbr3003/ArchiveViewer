@@ -44,4 +44,7 @@ dependencies {
     androidTestImplementation libs.espresso.core
     implementation libs.zip4j
     implementation libs.libvlc.all.v400eap20
+// https://mvnrepository.com/artifact/androidx.media3/media3-exoplayer
+    implementation 'androidx.media3:media3-exoplayer:1.7.1'
+    implementation 'androidx.media3:media3-ui:1.7.1'
 }
