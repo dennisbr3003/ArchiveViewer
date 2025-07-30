@@ -43,6 +43,7 @@ public class ZipFileAdapter extends RecyclerView.Adapter<ZipFileAdapter.ViewHold
         this.libraryTarget = ZipApplication.getLibraries().get(libraryPosition).getTarget();
         this.libraryZipKey = ZipApplication.getLibraries().get(libraryPosition).getZipkey();
         this.librarySource = ZipApplication.getLibraries().get(libraryPosition).getSource();
+        Log.d("DB1", "ZipFileAdapter.ZipFileAdapter - constructor complete: " + this.libraryTarget + "/" + this.libraryZipKey + "/" + this.librarySource);
     }
 
     @NonNull
@@ -56,20 +57,33 @@ public class ZipFileAdapter extends RecyclerView.Adapter<ZipFileAdapter.ViewHold
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
 
+        Log.d("DB1", "ZipFileAdapter.onBindViewHolder: position " + position);
+
         ZipEntryData entryData = zipEntries.get(position);
         holder.fileNameView.setText(entryData.getFileName());
         holder.fileSizeView.setText(String.valueOf(entryData.getDisplaySize()));
         holder.creationDateView.setText(String.valueOf(entryData.getDisplayDateTime()));
 
+        Log.d("DB1", "Thumbnail cached? " + thumbnailCache.isThumbnailCached(entryData.getCacheFolder(), entryData.getCacheName()));
+
         if (!thumbnailCache.isThumbnailCached(entryData.getCacheFolder(), entryData.getCacheName())) {
             if (entryData.getThumbnail() == null) {
+                Log.d("DB1", "entryData.getThumbnail() == null");
                 executorService.execute(() -> {
-                    InputStream inputStream = ZipUtilities.getImageInputStream(entryData.getFileName(), libraryTarget, libraryZipKey);
+                    InputStream inputStream = null;
+                    try {
+                        inputStream = ZipUtilities.getImageInputStream(entryData.getFileName(), libraryTarget, libraryZipKey);
+                    } catch (Exception e) {
+                        Log.d("DB1", "Error creating inputStream " + e.getMessage());
+                    }
                     if (inputStream != null) {
-                        Bitmap thumbnail = ZipUtilities.createThumbnail(inputStream, 45, 45, placeholder, entryData.getFileName());
+                        Log.d("DB1", "inputStream != null");
+                        Bitmap thumbnail = null;
+                        //Bitmap thumbnail = ZipUtilities.createThumbnail(inputStream, 45, 45, placeholder, entryData.getFileName());
                         try {
+                            thumbnail = ZipUtilities.createThumbnail(inputStream, 45, 45, placeholder, entryData.getFileName());
                             thumbnailCache.saveThumbnail(entryData.getCacheFolder(), entryData.getCacheName(), thumbnail);
-                            if(position==0){ // save the first image as library thumbnail
+                            if (position == 0) { // save the first image as library thumbnail
                                 thumbnailCache.saveThumbnail("", "cache_" + this.librarySource.hashCode(), thumbnail);
                             }
                         } catch (IOException e) {
@@ -107,11 +121,16 @@ public class ZipFileAdapter extends RecyclerView.Adapter<ZipFileAdapter.ViewHold
         public ImageView thumbNail;
 
         public ViewHolder(View view) {
-            super(view);
-            fileNameView = view.findViewById(R.id.fileName);
-            fileSizeView = view.findViewById(R.id.fileSize);
-            creationDateView = view.findViewById(R.id.creationDate);
-            thumbNail = view.findViewById(R.id.thumbnail);
+
+                super(view);
+            try {
+                fileNameView = view.findViewById(R.id.fileName);
+                fileSizeView = view.findViewById(R.id.fileSize);
+                creationDateView = view.findViewById(R.id.creationDate);
+                thumbNail = view.findViewById(R.id.thumbnail);
+            } catch (Exception e) {
+                Log.d("DB1", "ZipFileAdapter.ViewHolder - Error: " + e.getMessage());
+            }
         }
     }
 

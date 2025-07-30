@@ -69,31 +69,34 @@ public class FragmentZipLibrary extends Fragment implements IZipApplication {
         position = args.getInt("position", -1);
 
         Log.d("DB1", "FragmentZipLibrary.onCreateView: position after opening fragment: " + position);
+        try {
+            // Example usage of the collected data
+            TextView targetTextView = view.findViewById(R.id.targetTextView);
+            TextView numEntriesTextView = view.findViewById(R.id.targetNumEntries);
 
-        // Example usage of the collected data
-        TextView targetTextView = view.findViewById(R.id.targetTextView);
-        TextView numEntriesTextView = view.findViewById(R.id.targetNumEntries);
+            targetTextView.setText(name);
 
-        targetTextView.setText(name);
+            zipContent = ZipUtilities.getZipContentsFromAsset(source, target, zipkey);
 
-        zipContent = ZipUtilities.getZipContentsFromAsset(source, target, zipkey);
+            String summary = getString(
+                    R.string.file_summary,
+                    zipContent.size(),
+                    ZipUtilities.convertBytesToKilobytes(ZipUtilities.getZipLibrarySize(target, source))
+            );
+            numEntriesTextView.setText(summary);
 
-        String summary = getString(
-                R.string.file_summary,
-                zipContent.size(),
-                ZipUtilities.convertBytesToKilobytes(ZipUtilities.getZipLibrarySize(target, source))
-        );
-        numEntriesTextView.setText(summary);
+            ImageButton buttonUp = view.findViewById(R.id.imageButtonUp);
+            buttonUp.setOnClickListener(v -> smoothScrollToPosition(recyclerView, requireActivity(), 0));
 
-        ImageButton buttonUp = view.findViewById(R.id.imageButtonUp);
-        buttonUp.setOnClickListener(v -> smoothScrollToPosition(recyclerView, requireActivity(), 0));
+            ImageButton buttonDown = view.findViewById(R.id.imageButtonDown);
+            buttonDown.setOnClickListener(v -> smoothScrollToPosition(recyclerView, requireActivity(), zipContent.size() - 1));
 
-        ImageButton buttonDown = view.findViewById(R.id.imageButtonDown);
-        buttonDown.setOnClickListener(v -> smoothScrollToPosition(recyclerView, requireActivity(), zipContent.size() - 1));
+            adapter = new ZipFileAdapter(zipContent, position);
+            recyclerView.setAdapter(adapter);
 
-        adapter = new ZipFileAdapter(zipContent, position);
-        recyclerView.setAdapter(adapter);
-
+        } catch (Exception e){
+            Log.d("DB1", "FragmentZipLibrary.onCreateView: Error after opening fragment: " + e.getMessage());
+        }
         return view;
     }
 
