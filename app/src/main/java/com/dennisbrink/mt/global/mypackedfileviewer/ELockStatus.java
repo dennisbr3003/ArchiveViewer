@@ -1,6 +1,6 @@
 package com.dennisbrink.mt.global.mypackedfileviewer;
 
-public enum LockStatus {
+public enum ELockStatus {
     UNKNOWN,
     LOCKED_PASSWORD,
     LOCKED_NO_PASSWORD,

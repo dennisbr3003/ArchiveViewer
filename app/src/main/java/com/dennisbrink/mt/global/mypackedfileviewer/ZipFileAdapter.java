@@ -9,6 +9,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -20,10 +21,14 @@ import com.dennisbrink.mt.global.mypackedfileviewer.libraries.ThumbnailCache;
 import com.dennisbrink.mt.global.mypackedfileviewer.libraries.ZipUtilities;
 import com.dennisbrink.mt.global.mypackedfileviewer.structures.ZipEntryData;
 
+import net.lingala.zip4j.ZipFile;
+import net.lingala.zip4j.model.FileHeader;
+
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -34,9 +39,11 @@ public class ZipFileAdapter extends RecyclerView.Adapter<ZipFileAdapter.ViewHold
     private final String libraryTarget, libraryZipKey, librarySource;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private final Handler uiHandler = new Handler(Looper.getMainLooper());
-    private List<ZipEntryData> zipEntries;
+    private final List<ZipEntryData> zipEntries;
     ThumbnailCache thumbnailCache = new ThumbnailCache();
     Bitmap placeholder = BitmapFactory.decodeResource(ZipApplication.getAppContext().getResources(), R.drawable.no_image_small);
+    private boolean blockClickListener = false;
+   // ProgressBar progressBarLib2;
 
     public ZipFileAdapter(List<ZipEntryData> zipEntries, int libraryPosition) {
         this.zipEntries = zipEntries;
@@ -57,29 +64,24 @@ public class ZipFileAdapter extends RecyclerView.Adapter<ZipFileAdapter.ViewHold
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
 
-        Log.d("DB1", "ZipFileAdapter.onBindViewHolder: position " + position);
-
         ZipEntryData entryData = zipEntries.get(position);
         holder.fileNameView.setText(entryData.getFileName());
         holder.fileSizeView.setText(String.valueOf(entryData.getDisplaySize()));
         holder.creationDateView.setText(String.valueOf(entryData.getDisplayDateTime()));
 
-        Log.d("DB1", "Thumbnail cached? " + thumbnailCache.isThumbnailCached(entryData.getCacheFolder(), entryData.getCacheName()));
+        Log.d("DB1", "ZipFileAdapter.onBindViewHolder - position " + position + ", thumbnail cached: " + thumbnailCache.isThumbnailCached(entryData.getCacheFolder(), entryData.getCacheName()));
 
         if (!thumbnailCache.isThumbnailCached(entryData.getCacheFolder(), entryData.getCacheName())) {
             if (entryData.getThumbnail() == null) {
-                Log.d("DB1", "entryData.getThumbnail() == null");
                 executorService.execute(() -> {
                     InputStream inputStream = null;
                     try {
                         inputStream = ZipUtilities.getImageInputStream(entryData.getFileName(), libraryTarget, libraryZipKey);
                     } catch (Exception e) {
-                        Log.d("DB1", "Error creating inputStream " + e.getMessage());
+                        Log.d("DB1", "ZipFileAdapter.onBindViewHolder - Error creating inputStream " + e.getMessage());
                     }
                     if (inputStream != null) {
-                        Log.d("DB1", "inputStream != null");
                         Bitmap thumbnail = null;
-                        //Bitmap thumbnail = ZipUtilities.createThumbnail(inputStream, 45, 45, placeholder, entryData.getFileName());
                         try {
                             thumbnail = ZipUtilities.createThumbnail(inputStream, 45, 45, placeholder, entryData.getFileName());
                             thumbnailCache.saveThumbnail(entryData.getCacheFolder(), entryData.getCacheName(), thumbnail);
@@ -87,16 +89,17 @@ public class ZipFileAdapter extends RecyclerView.Adapter<ZipFileAdapter.ViewHold
                                 thumbnailCache.saveThumbnail("", "cache_" + this.librarySource.hashCode(), thumbnail);
                             }
                         } catch (IOException e) {
-                            Log.d("DB1", "ZipFileAdapter.onBindViewHolder: Saving the thumbnail to the app's files folder failed " + e.getMessage());
+                            Log.d("DB1", "ZipFileAdapter.onBindViewHolder - Saving the thumbnail to the app's files folder failed " + e.getMessage());
                         }
                         entryData.setThumbnail(thumbnail);
 
                         // Update the UI on the main thread using Handler
                         uiHandler.post(() -> holder.thumbNail.setImageBitmap(entryData.getThumbnail()));
                     } else {
-                        Log.d("DB1", "ZipFileAdapter.onBindViewHolder: InputStream was null for file: " + entryData.getFileName());
+                        Log.d("DB1", "ZipFileAdapter.onBindViewHolder - InputStream was null for file: " + entryData.getFileName());
                     }
                 });
+
             } else {
                 holder.thumbNail.setImageBitmap(entryData.getThumbnail());
             }
@@ -107,8 +110,53 @@ public class ZipFileAdapter extends RecyclerView.Adapter<ZipFileAdapter.ViewHold
             holder.thumbNail.setImageBitmap(entryData.getThumbnail());
         }
 
-        holder.itemView.setOnClickListener(v -> EventBus.getDefault().post(new OpenZipLibraryFileEvent(position, librarySource, libraryTarget, libraryZipKey, entryData)));
+        holder.itemView.setOnClickListener(v -> {
+            if (blockClickListener) return;
+            blockClickListener = true;
 
+            executorService.execute(() -> {
+
+                File tempFile = new File(ZipApplication.getAppContext().getFilesDir(), entryData.getFileName().hashCode() + ".mp4");
+                if (!tempFile.exists()) {
+
+                    new Handler(Looper.getMainLooper()).post(() -> {
+                        if (holder.progressBarLib2 != null) {
+                            if (holder.progressBarLib2.getVisibility() == View.INVISIBLE) {
+                                holder.progressBarLib2.setVisibility(View.VISIBLE);
+                            } else {
+                                holder.progressBarLib2.setVisibility(View.INVISIBLE);
+                            }
+                        }
+                    });
+
+
+                    byte[] videoBytes;
+                    try {
+                        ZipFile zipFile = new ZipFile(new File(ZipApplication.getAppContext().getFilesDir(), libraryTarget), libraryZipKey.toCharArray());
+                        FileHeader fileHeader = zipFile.getFileHeader(entryData.getFileName());
+                        InputStream inputStream = zipFile.getInputStream(fileHeader);
+                        videoBytes = inputStream.readAllBytes();
+                    } catch (Exception e) {
+                        Log.d("DB1", "Unable to create inputStream: " + e.getMessage());
+                        new Handler(Looper.getMainLooper()).post(() -> hideProgressbar(holder));
+                        return;
+                    }
+
+                    ZipUtilities.saveByteDataToFile(entryData.getFileName().hashCode() + ".mp4", "", videoBytes);
+                    new Handler(Looper.getMainLooper()).post(() -> hideProgressbar(holder));
+
+                }
+                EventBus.getDefault().post(new OpenZipLibraryFileEvent(position, librarySource, libraryTarget, libraryZipKey, entryData));
+            });
+
+        });
+
+    }
+
+    private void hideProgressbar(ViewHolder holder) {
+        if (holder.progressBarLib2 != null) {
+            holder.progressBarLib2.setVisibility(holder.progressBarLib2.getVisibility() == View.INVISIBLE ? View.VISIBLE : View.INVISIBLE);
+        }
     }
 
     @Override
@@ -119,17 +167,19 @@ public class ZipFileAdapter extends RecyclerView.Adapter<ZipFileAdapter.ViewHold
     public static class ViewHolder extends RecyclerView.ViewHolder {
         public TextView fileNameView, fileSizeView, creationDateView;
         public ImageView thumbNail;
+        public ProgressBar progressBarLib2;
 
         public ViewHolder(View view) {
 
-                super(view);
+            super(view);
             try {
                 fileNameView = view.findViewById(R.id.fileName);
                 fileSizeView = view.findViewById(R.id.fileSize);
                 creationDateView = view.findViewById(R.id.creationDate);
                 thumbNail = view.findViewById(R.id.thumbnail);
+                progressBarLib2 = view.findViewById(R.id.progressBarLib2);
             } catch (Exception e) {
-                Log.d("DB1", "ZipFileAdapter.ViewHolder - Error: " + e.getMessage());
+                Log.d("DB1", "ZipFileAdapter.ViewHolder.ViewHolder (constructor) - Error: " + e.getMessage());
             }
         }
     }

@@ -5,22 +5,16 @@ import android.graphics.BitmapFactory;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.ImageButton;
-import android.widget.SeekBar;
-import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
 import androidx.fragment.app.Fragment;
 import androidx.media3.common.MediaItem;
-import androidx.media3.common.Player;
 import androidx.media3.common.util.UnstableApi;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.ui.PlayerView;
@@ -29,15 +23,11 @@ import com.dennisbrink.mt.global.mypackedfileviewer.R;
 import com.dennisbrink.mt.global.mypackedfileviewer.ZipApplication;
 import com.dennisbrink.mt.global.mypackedfileviewer.events.VideoThumbnailFinalEvent;
 import com.dennisbrink.mt.global.mypackedfileviewer.libraries.ThumbnailCache;
-import com.dennisbrink.mt.global.mypackedfileviewer.libraries.ZipUtilities;
 import com.dennisbrink.mt.global.mypackedfileviewer.structures.ZipEntryData;
 
-import net.lingala.zip4j.ZipFile;
-import net.lingala.zip4j.model.FileHeader;
 import org.greenrobot.eventbus.EventBus;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -45,12 +35,11 @@ public class FragmentZipLibraryVideoFile extends Fragment implements IZipApplica
 
     private PlayerView playerView;
     private ExoPlayer player;
-//    private TextView totalTimeTv, currentTimeTv, timeRemainingTv;
-//    private SeekBar seekBar;
     private ImageButton soundToggle;
     private int startPosition = 0;
     private String source, target, zipkey, filename, cacheName, cacheFolder;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
+    private final ExecutorService executorService2 = Executors.newSingleThreadExecutor();
     Bitmap placeholder = BitmapFactory.decodeResource(ZipApplication.getAppContext().getResources(), R.drawable.no_image_small);
 
     @Override
@@ -64,12 +53,6 @@ public class FragmentZipLibraryVideoFile extends Fragment implements IZipApplica
         super.onViewCreated(view, savedInstanceState);
 
         playerView = view.findViewById(R.id.player_view);
-//        totalTimeTv = view.findViewById(R.id.total_time);
-//        currentTimeTv = view.findViewById(R.id.current_time);
-//        timeRemainingTv = view.findViewById(R.id.time_remaining);
-//        seekBar = view.findViewById(R.id.seek_bar);
-
-//        Handler handler = new Handler(Looper.getMainLooper());
         soundToggle = view.findViewById(R.id.imageButtonSoundOnOff);
 
         if (getArguments() != null) {
@@ -83,48 +66,49 @@ public class FragmentZipLibraryVideoFile extends Fragment implements IZipApplica
         }
 
         File tempFile = new File(ZipApplication.getAppContext().getFilesDir(), filename.hashCode() + ".mp4");
-        if (!tempFile.exists()) {
+//        if (!tempFile.exists()) {
+//            // show ProgressBar
+//
+//            executorService.execute(() -> {
+//                byte[] videoBytes;
+//                try {
+//                    ZipFile zipFile = new ZipFile(new File(ZipApplication.getAppContext().getFilesDir(), this.target), this.zipkey.toCharArray());
+//                    FileHeader fileHeader = zipFile.getFileHeader(filename);
+//                    InputStream inputStream = zipFile.getInputStream(fileHeader);
+//                    videoBytes = inputStream.readAllBytes();
+//                } catch (Exception e) {
+//                    Log.d("DB1", "Unable to create inputStream: " + e.getMessage());
+//                    new Handler(Looper.getMainLooper()).post(this::hideProgressbar);
+//                    return;
+//                }
+//
+//                ZipUtilities.saveByteDataToFile(filename.hashCode() + ".mp4", "", videoBytes);
+//
+//                new Handler(Looper.getMainLooper()).post(this::hideProgressbar);
+//
+//            });
+//        }
 
-            byte[] videoBytes;
-            try {
-                ZipFile zipFile = new ZipFile(new File(ZipApplication.getAppContext().getFilesDir(), this.target), this.zipkey.toCharArray());
-                FileHeader fileHeader = zipFile.getFileHeader(filename);
-                InputStream inputStream = zipFile.getInputStream(fileHeader);
-                videoBytes = inputStream.readAllBytes();
-            } catch (Exception e) {
-                Log.d("DB1", "Unable to create inputStream: " + e.getMessage());
-                return;
-            }
-
-            ZipUtilities.saveByteDataToFile(filename.hashCode() + ".mp4", "", videoBytes);
-        }
-
-        soundToggle.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Log.d("DB1", "sound toggle click listener " + player.isDeviceMuted());
-                if(player.getVolume()==0) {
-                    player.setVolume(1.0f);
-                    soundToggle.setImageResource(R.drawable.sound_off); // Muted icon
-                } else {
-                    player.setVolume(0.0f);
-                    soundToggle.setImageResource(R.drawable.sound_on);
-                }
+        soundToggle.setOnClickListener(view1 -> {
+            Log.d("DB1", "sound toggle click listener " + player.isDeviceMuted());
+            if(player.getVolume()==0) {
+                player.setVolume(1.0f);
+                soundToggle.setImageResource(R.drawable.sound_off); // Muted icon
+            } else {
+                player.setVolume(0.0f);
+                soundToggle.setImageResource(R.drawable.sound_on);
             }
         });
 
         // Handle thumbnail creation
         executorService.execute(() -> {
-            Log.d("DB1", "Creating thumbnail executorService");
             Bitmap videoThumbnail;
-            Log.d("DB1", "Creating thumbnail executorService 2 " + tempFile.getAbsolutePath());
             try {
                 videoThumbnail = createVideoThumbnail(tempFile.getAbsolutePath());
             } catch (Exception e) {
-                Log.d("DB1", "Creating thumbnail 2 not reached " + e.getMessage());
+                Log.d("DB1", "FragmentZipLibraryVideoFile.onViewCreated.executorService.execute - Creating thumbnail error: " + e.getMessage());
                 throw new RuntimeException(e);
             }
-            Log.d("DB1", "Creating thumbnail 2");
             ThumbnailCache thumbnailCache = new ThumbnailCache();
             try {
                 thumbnailCache.saveThumbnail(cacheFolder, cacheName, videoThumbnail);
@@ -132,11 +116,9 @@ public class FragmentZipLibraryVideoFile extends Fragment implements IZipApplica
                     thumbnailCache.saveThumbnail("", "cache_" + source.hashCode(), videoThumbnail);
                 }
             } catch (IOException e) {
-                Log.d("DB1", "Thumbnail not saved: " + e.getMessage());
+                Log.d("DB1", "FragmentZipLibraryVideoFile.onViewCreated.executorService.execute - Thumbnail not saved: " + e.getMessage());
             }
-            Log.d("DB1", "Creating thumbnail 3");
             EventBus.getDefault().post(new VideoThumbnailFinalEvent(startPosition, target, source, zipkey));
-            Log.d("DB1", "Creating thumbnail 4");
         });
 
         // Setup ExoPlayer
@@ -158,73 +140,14 @@ public class FragmentZipLibraryVideoFile extends Fragment implements IZipApplica
 
         player.setRepeatMode(ExoPlayer.REPEAT_MODE_ONE);
 
-        // Runnable to update progress
-//        Runnable updateSeekBar = new Runnable() {
-//            @Override
-//            public void run() {
-//                if (player != null) {
-////                    seekBar.setProgress((int) (player.getCurrentPosition() / 1000));
-////                    handler.postDelayed(this, 1000);
-//
-//                    long currentPosition = player.getCurrentPosition();
-//                    long totalDuration = player.getDuration();
-//                    Log.d("DB1", "currentPosition/totalDuration " + currentPosition  + "/" + totalDuration);
-////                    currentTimeTv.setText(formatTime(currentPosition));
-////                    totalTimeTv.setText(formatTime(totalDuration));
-////                    timeRemainingTv.setText(formatTime(totalDuration - currentPosition));
-//
-//                }
-//            }
-//        };
-//        player.addListener(new Player.Listener() {
-//            @Override
-//            public void onPlaybackStateChanged(int playbackState) {
-//                if (playbackState == ExoPlayer.STATE_READY) {
-//                    seekBar.setMax((int) (player.getDuration() / 1000));
-//                }
-//            }
-//        });
-        // Start the update loop
-     //   handler.post(updateSeekBar);
-
-//        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-//            @Override
-//            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-//                if (fromUser) {
-//                    long seekMs = progress * 1000L;
-//                    player.seekTo(seekMs);
-//                }
-//            }
-//
-//            @Override
-//            public void onStartTrackingTouch(SeekBar seekBar) {}
-//
-//            @Override
-//            public void onStopTrackingTouch(SeekBar seekBar) {}
-//        });
-
         if (savedInstanceState != null) {
             long savedPosition = savedInstanceState.getLong("current_position", 0);
             player.seekTo(savedPosition);
         }
     }
 
-//    private void toggleSound() {
-//        if (isMuted) {
-//            player.setVolume(1.0f);
-//            soundBtn.setText("Sound: On");
-//        } else {
-//            player.setVolume(0.0f);
-//            soundBtn.setText("Sound: Off");
-//        }
-//        isMuted = !isMuted;
-//    }
-
-//    private String formatTime(long ms) {
-//        int totalSeconds = (int) (ms / 1000);
-//        int minutes = totalSeconds / 60;
-//        int seconds = totalSeconds % 60;
-//        return String.format("%02d:%02d", minutes, seconds);
+//    private void hideProgressbar() {
+//        Log.d("DB1", "Hide progressbar");
 //    }
 
     @Override
@@ -269,7 +192,7 @@ public class FragmentZipLibraryVideoFile extends Fragment implements IZipApplica
             Bitmap originalThumbnail = retriever.getFrameAtTime(1000000, MediaMetadataRetriever.OPTION_CLOSEST_SYNC);
             return (originalThumbnail != null) ? Bitmap.createScaledBitmap(originalThumbnail, 45, 45, true) : placeholder;
         } catch (Exception e) {
-            Log.d("DB1", "No thumbnail created: " + e.getMessage());
+            Log.d("DB1", "FragmentZipLibraryVideoFile.createVideoThumbnail - No thumbnail created: " + e.getMessage());
             return placeholder;
         } finally {
             retriever.release();
