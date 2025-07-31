@@ -1,6 +1,6 @@
 package com.dennisbrink.mt.global.mypackedfileviewer.structures;
 
-import com.dennisbrink.mt.global.mypackedfileviewer.LockStatus;
+import com.dennisbrink.mt.global.mypackedfileviewer.ELockStatus;
 import com.dennisbrink.mt.global.mypackedfileviewer.R;
 import com.dennisbrink.mt.global.mypackedfileviewer.ZipApplication;
 import com.dennisbrink.mt.global.mypackedfileviewer.libraries.ZipUtilities;
@@ -8,7 +8,7 @@ import com.dennisbrink.mt.global.mypackedfileviewer.libraries.ZipUtilities;
 public class ZipLibraryExtraData {
 
     private String fileSize, fileDate, numFiles, errorMessage, warningMessage;
-    private LockStatus lockState;
+    private ELockStatus lockState;
     private Boolean isCopied = true;
     private Boolean inAssets = true;
     private Boolean isValidZip = false;
@@ -72,11 +72,11 @@ public class ZipLibraryExtraData {
         this.numFiles = ZipApplication.getAppContext().getString(R.string.files) + numFiles;
     }
 
-    public LockStatus getLockState() {
+    public ELockStatus getLockState() {
         return lockState;
     }
 
-    public void setLockState(LockStatus lockState) {
+    public void setLockState(ELockStatus lockState) {
         this.lockState = lockState;
     }
 

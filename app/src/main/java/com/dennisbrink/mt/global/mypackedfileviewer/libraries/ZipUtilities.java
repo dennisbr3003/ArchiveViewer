@@ -5,17 +5,13 @@ import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.ThumbnailUtils;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
 
 import com.dennisbrink.mt.global.mypackedfileviewer.IZipApplication;
-import com.dennisbrink.mt.global.mypackedfileviewer.LockStatus;
+import com.dennisbrink.mt.global.mypackedfileviewer.ELockStatus;
 import com.dennisbrink.mt.global.mypackedfileviewer.R;
 import com.dennisbrink.mt.global.mypackedfileviewer.ZipApplication;
 import com.dennisbrink.mt.global.mypackedfileviewer.EVideoExtensions;
-import com.dennisbrink.mt.global.mypackedfileviewer.ZipLibraryActivity;
-import com.dennisbrink.mt.global.mypackedfileviewer.events.UpdateLibraryLockState;
 import com.dennisbrink.mt.global.mypackedfileviewer.structures.Coordinates;
 import com.dennisbrink.mt.global.mypackedfileviewer.structures.ZipEntryData;
 import com.dennisbrink.mt.global.mypackedfileviewer.structures.ZipLibraryExtraData;
@@ -24,8 +20,6 @@ import com.google.gson.reflect.TypeToken;
 
 import net.lingala.zip4j.ZipFile;
 import net.lingala.zip4j.model.FileHeader;
-
-import org.greenrobot.eventbus.EventBus;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -68,6 +62,9 @@ public class ZipUtilities implements IZipApplication {
         File tempFile = new File(ZipApplication.getAppContext().getFilesDir(), target);
 
         if (!tempFile.exists()) {
+
+            Log.d("DB1", "ZipUtilities.copyZipFromAssetZip - File " + target + " will be copied to files folder");
+
             try (InputStream inputStream = ZipApplication.getAppContext().getAssets().open(source);
                  FileOutputStream outputStream = new FileOutputStream(tempFile)) {
 
@@ -80,9 +77,11 @@ public class ZipUtilities implements IZipApplication {
 
             }
             catch (Exception e){
-                Log.d("DB1", "ZipUtilities.copyZipFromAssetZip: file could not be copied to files dir: " + Objects.requireNonNull(e.getMessage()));
+                Log.d("DB1", "ZipUtilities.copyZipFromAssetZip - File could not be copied to files folder: " + Objects.requireNonNull(e.getMessage()));
                 return false; // not copied
             }
+        } else {
+            Log.d("DB1", "ZipUtilities.copyZipFromAssetZip - File " + target + " already exists in the files folder");
         }
         return true; // file exists or is copied successfully
     }
@@ -126,7 +125,7 @@ public class ZipUtilities implements IZipApplication {
         if(!tempFile.exists()){
             zipLibraryExtraData.setCopied(false);
             zipLibraryExtraData.setWarningMessage(ZipApplication.getAppContext().getString(R.string.archive_is_not_copied));
-            zipLibraryExtraData.setLockState(LockStatus.UNKNOWN);
+            zipLibraryExtraData.setLockState(ELockStatus.UNKNOWN);
 
             if(checkIfFileExistsInAssetsFolder(source)){
                 try {
@@ -152,20 +151,20 @@ public class ZipUtilities implements IZipApplication {
                 if (zipFile.isValidZipFile()) {
                     if(zipFile.isEncrypted()) {
                         if (zipkey.isEmpty()) {
-                            zipLibraryExtraData.setLockState(LockStatus.LOCKED_NO_PASSWORD);
+                            zipLibraryExtraData.setLockState(ELockStatus.LOCKED_NO_PASSWORD);
                         } else {
-                            if(zipLibraryExtraData.getLockState() != LockStatus.LOCKED_CORRUPTED) {
-                                zipLibraryExtraData.setLockState(LockStatus.LOCKED_PASSWORD);
+                            if(zipLibraryExtraData.getLockState() != ELockStatus.LOCKED_CORRUPTED) {
+                                zipLibraryExtraData.setLockState(ELockStatus.LOCKED_PASSWORD);
                             }
                         }
                     } else {
-                        zipLibraryExtraData.setLockState(LockStatus.NOT_LOCKED);
+                        zipLibraryExtraData.setLockState(ELockStatus.NOT_LOCKED);
                     }
                 }
             } catch (IOException e) {
                 zipLibraryExtraData.setValidZip(false);
                 zipLibraryExtraData.setErrorMessage(ZipApplication.getAppContext().getString(R.string.invalid_zip_archive));
-                zipLibraryExtraData.setLockState(LockStatus.UNKNOWN);
+                zipLibraryExtraData.setLockState(ELockStatus.UNKNOWN);
             }
 
             try (ZipFile zipFile = new ZipFile(tempFile, zipkey.toCharArray())) {
@@ -175,7 +174,7 @@ public class ZipUtilities implements IZipApplication {
             } catch (IOException e) {
                 zipLibraryExtraData.setValidZip(false);
                 zipLibraryExtraData.setErrorMessage(ZipApplication.getAppContext().getString(R.string.invalid_password));
-                zipLibraryExtraData.setLockState(LockStatus.LOCKED_CORRUPTED);
+                zipLibraryExtraData.setLockState(ELockStatus.LOCKED_CORRUPTED);
             }
         }
 
@@ -264,13 +263,13 @@ public class ZipUtilities implements IZipApplication {
                     // Create the thumbnail
                     thumbnail = ThumbnailUtils.extractThumbnail(originalBitmap, width, height);
                 } else {
-                    Log.d("DB1", "ZipUtilities.createThumbnail: Decoding failed: Unsupported file format or corrupt image.");
+                    Log.d("DB1", "ZipUtilities.createThumbnail - Decoding failed: Unsupported file format or corrupt image.");
                 }
             } catch (Exception e) {
-                Log.d("DB1", "ZipUtilities.createThumbnail: Thumbnail generation failed: " + e.getMessage());
+                Log.d("DB1", "ZipUtilities.createThumbnail - Thumbnail generation failed: " + e.getMessage());
             }
         } else {
-            Log.d("DB1", "ZipUtilities.createThumbnail: file is found to be a video file");
+            Log.d("DB1", "ZipUtilities.createThumbnail - File is a video file, thumbnail generation will occur during playback");
         }
         return thumbnail != null ? thumbnail : placeholder;
 
@@ -286,7 +285,7 @@ public class ZipUtilities implements IZipApplication {
         try {
             fileHeader = zipFile.getFileHeader(fileName);
         } catch(Exception e) {
-            Log.d("DB1", "ZipUtilities.getImageInputStream: " + e.getMessage());
+            Log.d("DB1", "ZipUtilities.getImageInputStream - " + e.getMessage());
         }
 
         assert fileHeader != null;
@@ -315,12 +314,11 @@ public class ZipUtilities implements IZipApplication {
         if(!strData.isEmpty()){
             try {
                 entryDataList = jsonToZipEntryDataList(strData);
-                Log.d("DB1", "ZipUtilities.getZipContentsFromAsset: Extra data retrieved from file " + FILE_EXTRA_DIR + target);
-                Log.d("DB1", "ZipUtilities.getZipContentsFromAsset: Extra data: " + strData);
+                Log.d("DB1", "ZipUtilities.getZipContentsFromAsset - Extra data retrieved from file " + FILE_EXTRA_DIR + target);
                 return entryDataList;
             } catch(Exception e) {
                 // something went wrong so we must continue with actually iterating file headers
-                Log.d("DB1", "ZipUtilities.getZipContentsFromAsset: Extra data was found but could not be retrieved from file " + FILE_EXTRA_DIR + target);
+                Log.d("DB1", "ZipUtilities.getZipContentsFromAsset - Extra data was found but could not be retrieved from file " + FILE_EXTRA_DIR + target);
             }
         }
 
@@ -348,10 +346,10 @@ public class ZipUtilities implements IZipApplication {
 
             // got the extra data here, we now save it for quick extraction next time
             saveDataToFile(target, FILE_EXTRA_DIR, zipEntryDataListToJson(entryDataList));
-            Log.d("DB1", "ZipUtilities.getZipContentsFromAsset: Extra data saved to file " + FILE_EXTRA_DIR + target);
+            Log.d("DB1", "ZipUtilities.getZipContentsFromAsset - Extra data saved to file " + FILE_EXTRA_DIR + target);
 
         } catch (Exception e) {
-            Log.d("DB1", "ZipUtilities.getZipContentsFromAsset: Zip file " + source + " could not be read -> " + e.getMessage());
+            Log.d("DB1", "ZipUtilities.getZipContentsFromAsset - Zip file " + source + " could not be read -> " + e.getMessage());
         }
 
         return entryDataList;
@@ -359,7 +357,7 @@ public class ZipUtilities implements IZipApplication {
 
     public static void saveDataToFile(String fileName, String folder, String data) {
 
-        Log.d("DB1", "ZipUtilities.saveDataToFile: saving data for -> " + data);
+        Log.d("DB1", "ZipUtilities.saveDataToFile - Saving data for -> " + data);
 
         File extraDataDir = new File(ZipApplication.getAppContext().getFilesDir(), folder);
         if (!extraDataDir.exists()) extraDataDir.mkdirs();
@@ -370,7 +368,7 @@ public class ZipUtilities implements IZipApplication {
             fos.flush();
         } catch (IOException e) {
             // do nothing, we just have no file that's all
-            Log.d("DB1", "ZipUtilities.saveDataToFile: Non lethal error saving data -> " + e.getMessage());
+            Log.d("DB1", "ZipUtilities.saveDataToFile - Non lethal error saving data -> " + e.getMessage());
         }
     }
 
@@ -388,7 +386,7 @@ public class ZipUtilities implements IZipApplication {
             }
         } catch (IOException e) {
             // do nothing, just no extra data from file
-            Log.d("DB1", "ZipUtilities.loadDataFromFile: Non lethal error loading data -> " + e.getMessage());
+            Log.d("DB1", "ZipUtilities.loadDataFromFile - Non lethal error loading data -> " + e.getMessage());
         }
 
         return data.toString().trim();
@@ -428,7 +426,7 @@ public class ZipUtilities implements IZipApplication {
             fos.flush();
         } catch (IOException e) {
             // do nothing, we just have no file that's all
-            Log.d("DB1", "ZipUtilities.saveByteDataToFile: Non lethal error saving data -> " + e.getMessage());
+            Log.d("DB1", "ZipUtilities.saveByteDataToFile - Non lethal error saving data -> " + e.getMessage());
         }
 
     }
