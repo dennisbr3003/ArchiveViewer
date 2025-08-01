@@ -68,4 +68,19 @@ public class ZipEntryData {
     public void setFinal(Boolean aFinal) { isFinal = aFinal; }
 
     public Boolean getFinal() { return isFinal; }
+
+    @NonNull
+    @Override
+    public String toString() {
+        return "ZipEntryData{" +
+                "fileName='" + fileName + '\'' +
+                ", displayDateTime='" + displayDateTime + '\'' +
+                ", displaySize='" + displaySize + '\'' +
+                ", eFileType=" + eFileType +
+                ", cacheName='" + cacheName + '\'' +
+                ", cacheFolder='" + cacheFolder + '\'' +
+                ", thumbnail=" + thumbnail +
+                ", isFinal=" + isFinal +
+                '}';
+    }
 }

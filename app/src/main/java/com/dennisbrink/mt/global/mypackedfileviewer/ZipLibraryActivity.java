@@ -103,24 +103,19 @@ public class ZipLibraryActivity extends AppCompatActivity  {
     }
 
     private void loadFragmentZipLibrary(int position) {
-        Log.d("DB1", "ZipLibraryActivity.loadFragmentZipLibrary: load library content fragment");
-        try {
-            ZipLibrary item = ZipApplication.getLibraries().get(position);
-            FragmentZipLibrary fragment = FragmentZipLibrary.newInstance(
-                    item.getSource(),
-                    item.getTarget(),
-                    item.getName(),
-                    item.getZipkey(),
-                    position
-            );
-            this.getSupportFragmentManager()
-                    .beginTransaction()
-                    .replace(R.id.fragmentContainer, fragment) // Use your FrameLayout's ID
-                    .addToBackStack(null)
-                    .commit();
-        } catch(Exception e) {
-            Log.d("DB1", "ZipLibraryActivity.loadFragmentZipLibrary: Error loading fragment " + e.getMessage());
-        }
+        ZipLibrary item = ZipApplication.getLibraries().get(position);
+        FragmentZipLibrary fragment = FragmentZipLibrary.newInstance(
+                item.getSource(),
+                item.getTarget(),
+                item.getName(),
+                item.getZipkey(),
+                position
+        );
+        this.getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.fragmentContainer, fragment) // Use your FrameLayout's ID
+                .addToBackStack(null)
+                .commit();
     }
 
     private void loadFragmentZipLibraryFile (int position, String source, String target, String zipkey) {
@@ -138,23 +133,18 @@ public class ZipLibraryActivity extends AppCompatActivity  {
     }
 
     private void loadFragmentZipLibraryVideoFile (int position, String source, String target, String zipkey, ZipEntryData entryData) {
-        Log.d("DB1", "ZipLibraryActivity.loadFragmentZipLibraryVideoFile: load video fragment");
-        try {
-            FragmentZipLibraryVideoFile fragment = FragmentZipLibraryVideoFile.newInstance(
-                    position,
-                    source,
-                    target,
-                    zipkey,
-                    entryData
-            );
-            this.getSupportFragmentManager()
-                    .beginTransaction()
-                    .replace(R.id.fragmentContainer, fragment)
-                    .addToBackStack(null)
-                    .commit();
-        } catch (Exception e) {
-            Log.d("DB1", "ZipLibraryActivity.loadFragmentZipLibraryVideoFile: Error loading video fragment " + e.getMessage());
-        }
+        FragmentZipLibraryVideoFile fragment = FragmentZipLibraryVideoFile.newInstance(
+                position,
+                source,
+                target,
+                zipkey,
+                entryData
+        );
+        this.getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.fragmentContainer, fragment)
+                .addToBackStack(null)
+                .commit();
     }
 
 }

@@ -16,7 +16,6 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.dennisbrink.mt.global.mypackedfileviewer.events.OpenZipLibraryFileEvent;
-import com.dennisbrink.mt.global.mypackedfileviewer.events.VideoThumbnailFinalEvent;
 import com.dennisbrink.mt.global.mypackedfileviewer.libraries.ThumbnailCache;
 import com.dennisbrink.mt.global.mypackedfileviewer.libraries.ZipUtilities;
 import com.dennisbrink.mt.global.mypackedfileviewer.structures.ZipEntryData;
@@ -25,8 +24,6 @@ import net.lingala.zip4j.ZipFile;
 import net.lingala.zip4j.model.FileHeader;
 
 import org.greenrobot.eventbus.EventBus;
-import org.greenrobot.eventbus.Subscribe;
-import org.greenrobot.eventbus.ThreadMode;
 
 import java.io.File;
 import java.io.IOException;
@@ -43,14 +40,14 @@ public class ZipFileAdapter extends RecyclerView.Adapter<ZipFileAdapter.ViewHold
     ThumbnailCache thumbnailCache = new ThumbnailCache();
     Bitmap placeholder = BitmapFactory.decodeResource(ZipApplication.getAppContext().getResources(), R.drawable.no_image_small);
     private boolean blockClickListener = false;
-   // ProgressBar progressBarLib2;
+
 
     public ZipFileAdapter(List<ZipEntryData> zipEntries, int libraryPosition) {
         this.zipEntries = zipEntries;
         this.libraryTarget = ZipApplication.getLibraries().get(libraryPosition).getTarget();
         this.libraryZipKey = ZipApplication.getLibraries().get(libraryPosition).getZipkey();
         this.librarySource = ZipApplication.getLibraries().get(libraryPosition).getSource();
-        Log.d("DB1", "ZipFileAdapter.ZipFileAdapter - constructor complete: " + this.libraryTarget + "/" + this.libraryZipKey + "/" + this.librarySource);
+        Log.d("DB1", "ZipFileAdapter.ZipFileAdapter - constructor complete -> target: " + this.libraryTarget + " / key: " + this.libraryZipKey + " / source " + this.librarySource);
     }
 
     @NonNull
@@ -68,8 +65,6 @@ public class ZipFileAdapter extends RecyclerView.Adapter<ZipFileAdapter.ViewHold
         holder.fileNameView.setText(entryData.getFileName());
         holder.fileSizeView.setText(String.valueOf(entryData.getDisplaySize()));
         holder.creationDateView.setText(String.valueOf(entryData.getDisplayDateTime()));
-
-        Log.d("DB1", "ZipFileAdapter.onBindViewHolder - position " + position + ", thumbnail cached: " + thumbnailCache.isThumbnailCached(entryData.getCacheFolder(), entryData.getCacheName()));
 
         if (!thumbnailCache.isThumbnailCached(entryData.getCacheFolder(), entryData.getCacheName())) {
             if (entryData.getThumbnail() == null) {
@@ -111,44 +106,54 @@ public class ZipFileAdapter extends RecyclerView.Adapter<ZipFileAdapter.ViewHold
         }
 
         holder.itemView.setOnClickListener(v -> {
+
             if (blockClickListener) return;
             blockClickListener = true;
 
-            executorService.execute(() -> {
+            Log.d("DB1", "ZipFileAdapter.onBindViewHolder.holder.itemView.setOnClickListener - entryData: " + entryData);
 
-                File tempFile = new File(ZipApplication.getAppContext().getFilesDir(), entryData.getFileName().hashCode() + ".mp4");
-                if (!tempFile.exists()) {
+            if(entryData.getFileType()==EFileTypes.VIDEO) {
 
-                    new Handler(Looper.getMainLooper()).post(() -> {
-                        if (holder.progressBarLib2 != null) {
-                            if (holder.progressBarLib2.getVisibility() == View.INVISIBLE) {
-                                holder.progressBarLib2.setVisibility(View.VISIBLE);
-                            } else {
-                                holder.progressBarLib2.setVisibility(View.INVISIBLE);
+                // check if video has been copied already. If not then do so in a different thread
+                executorService.execute(() -> {
+
+                    File tempFile = new File(ZipApplication.getAppContext().getFilesDir(), entryData.getFileName().hashCode() + ".mp4");
+                    if (!tempFile.exists()) {
+
+                        // progress bar only show with large files, thus video's in this case. Using a handler to reach the main thread
+                        new Handler(Looper.getMainLooper()).post(() -> {
+                            if (holder.progressBarLib2 != null) {
+                                if (holder.progressBarLib2.getVisibility() == View.INVISIBLE) {
+                                    holder.progressBarLib2.setVisibility(View.VISIBLE);
+                                } else {
+                                    holder.progressBarLib2.setVisibility(View.INVISIBLE);
+                                }
                             }
+                        });
+
+
+                        byte[] videoBytes;
+                        try {
+                            ZipFile zipFile = new ZipFile(new File(ZipApplication.getAppContext().getFilesDir(), libraryTarget), libraryZipKey.toCharArray());
+                            FileHeader fileHeader = zipFile.getFileHeader(entryData.getFileName());
+                            InputStream inputStream = zipFile.getInputStream(fileHeader);
+                            videoBytes = inputStream.readAllBytes();
+                        } catch (Exception e) {
+                            Log.d("DB1", "ZipFileAdapter.onBindViewHolder.holder.itemView.setOnClickListener.executorService.execute -  Unable to create inputStream: " + e.getMessage());
+                            new Handler(Looper.getMainLooper()).post(() -> hideProgressbar(holder));
+                            return;
                         }
-                    });
 
-
-                    byte[] videoBytes;
-                    try {
-                        ZipFile zipFile = new ZipFile(new File(ZipApplication.getAppContext().getFilesDir(), libraryTarget), libraryZipKey.toCharArray());
-                        FileHeader fileHeader = zipFile.getFileHeader(entryData.getFileName());
-                        InputStream inputStream = zipFile.getInputStream(fileHeader);
-                        videoBytes = inputStream.readAllBytes();
-                    } catch (Exception e) {
-                        Log.d("DB1", "Unable to create inputStream: " + e.getMessage());
+                        ZipUtilities.saveByteDataToFile(entryData.getFileName().hashCode() + ".mp4", "", videoBytes);
                         new Handler(Looper.getMainLooper()).post(() -> hideProgressbar(holder));
-                        return;
+
                     }
-
-                    ZipUtilities.saveByteDataToFile(entryData.getFileName().hashCode() + ".mp4", "", videoBytes);
-                    new Handler(Looper.getMainLooper()).post(() -> hideProgressbar(holder));
-
-                }
+                    EventBus.getDefault().post(new OpenZipLibraryFileEvent(position, librarySource, libraryTarget, libraryZipKey, entryData));
+                });
+            } else {
+                // run directly from inputSteam (IMAGE)
                 EventBus.getDefault().post(new OpenZipLibraryFileEvent(position, librarySource, libraryTarget, libraryZipKey, entryData));
-            });
-
+            }
         });
 
     }

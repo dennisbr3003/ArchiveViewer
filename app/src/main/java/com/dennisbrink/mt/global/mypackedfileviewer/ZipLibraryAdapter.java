@@ -140,6 +140,7 @@ public class ZipLibraryAdapter extends RecyclerView.Adapter<ZipLibraryAdapter.Li
 
                 // load the file that we saved with the extra library data
                 ZipLibraryExtraData zipLibraryExtraDataHolder = ZipUtilities.getZipLibraryExtraDataObjectFromFile(ZipApplication.getLibraries().get(position).getTarget());
+
                 // block click on invalid and not existing assets
                 if (!zipLibraryExtraDataHolder.getValidZip() && zipLibraryExtraDataHolder.getIsCopied()) return;
                 if (!zipLibraryExtraDataHolder.getInAssets()) return;
@@ -164,6 +165,7 @@ public class ZipLibraryAdapter extends RecyclerView.Adapter<ZipLibraryAdapter.Li
                 // 1. copy file here
                 // 2. check zip file vitals
                 // 3. decide if we need to show the dialog
+
                 ExecutorService executor = Executors.newSingleThreadExecutor();
 
                 executor.execute(() -> {
@@ -210,6 +212,8 @@ public class ZipLibraryAdapter extends RecyclerView.Adapter<ZipLibraryAdapter.Li
                     }
 
                     boolean finalShowDialog = showDialog;
+
+                    // in order to reach the main thread we need this handler
                     new Handler(Looper.getMainLooper()).post(() -> {
                         if (finalShowDialog) {
                             showPasswordDialog(v.getContext(), position, holder);
