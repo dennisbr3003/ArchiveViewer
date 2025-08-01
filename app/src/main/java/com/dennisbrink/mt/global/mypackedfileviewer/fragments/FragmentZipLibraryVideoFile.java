@@ -33,13 +33,11 @@ import java.util.concurrent.Executors;
 
 public class FragmentZipLibraryVideoFile extends Fragment implements IZipApplication {
 
-    private PlayerView playerView;
     private ExoPlayer player;
     private ImageButton soundToggle;
     private int startPosition = 0;
     private String source, target, zipkey, filename, cacheName, cacheFolder;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
-    private final ExecutorService executorService2 = Executors.newSingleThreadExecutor();
     Bitmap placeholder = BitmapFactory.decodeResource(ZipApplication.getAppContext().getResources(), R.drawable.no_image_small);
 
     @Override
@@ -52,7 +50,7 @@ public class FragmentZipLibraryVideoFile extends Fragment implements IZipApplica
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        playerView = view.findViewById(R.id.player_view);
+        PlayerView playerView = view.findViewById(R.id.player_view);
         soundToggle = view.findViewById(R.id.imageButtonSoundOnOff);
 
         if (getArguments() != null) {
@@ -66,31 +64,9 @@ public class FragmentZipLibraryVideoFile extends Fragment implements IZipApplica
         }
 
         File tempFile = new File(ZipApplication.getAppContext().getFilesDir(), filename.hashCode() + ".mp4");
-//        if (!tempFile.exists()) {
-//            // show ProgressBar
-//
-//            executorService.execute(() -> {
-//                byte[] videoBytes;
-//                try {
-//                    ZipFile zipFile = new ZipFile(new File(ZipApplication.getAppContext().getFilesDir(), this.target), this.zipkey.toCharArray());
-//                    FileHeader fileHeader = zipFile.getFileHeader(filename);
-//                    InputStream inputStream = zipFile.getInputStream(fileHeader);
-//                    videoBytes = inputStream.readAllBytes();
-//                } catch (Exception e) {
-//                    Log.d("DB1", "Unable to create inputStream: " + e.getMessage());
-//                    new Handler(Looper.getMainLooper()).post(this::hideProgressbar);
-//                    return;
-//                }
-//
-//                ZipUtilities.saveByteDataToFile(filename.hashCode() + ".mp4", "", videoBytes);
-//
-//                new Handler(Looper.getMainLooper()).post(this::hideProgressbar);
-//
-//            });
-//        }
 
         soundToggle.setOnClickListener(view1 -> {
-            Log.d("DB1", "sound toggle click listener " + player.isDeviceMuted());
+            Log.d("DB1", "FragmentZipLibraryVideoFile.onViewCreated.soundToggle.setOnClickListener - sound toggle click listener " + player.isDeviceMuted());
             if(player.getVolume()==0) {
                 player.setVolume(1.0f);
                 soundToggle.setImageResource(R.drawable.sound_off); // Muted icon
@@ -129,8 +105,6 @@ public class FragmentZipLibraryVideoFile extends Fragment implements IZipApplica
 
         player.setMediaItem(mediaItem);
         player.prepare();
-
-
         player.setPlayWhenReady(true);
         player.setVolume(0.0f);
 
@@ -145,10 +119,6 @@ public class FragmentZipLibraryVideoFile extends Fragment implements IZipApplica
             player.seekTo(savedPosition);
         }
     }
-
-//    private void hideProgressbar() {
-//        Log.d("DB1", "Hide progressbar");
-//    }
 
     @Override
     public void onSaveInstanceState(@NonNull Bundle outState) {
@@ -186,16 +156,17 @@ public class FragmentZipLibraryVideoFile extends Fragment implements IZipApplica
     }
 
     public Bitmap createVideoThumbnail(String videoPath) throws IOException {
-        MediaMetadataRetriever retriever = new MediaMetadataRetriever();
-        try {
-            retriever.setDataSource(videoPath);
-            Bitmap originalThumbnail = retriever.getFrameAtTime(1000000, MediaMetadataRetriever.OPTION_CLOSEST_SYNC);
-            return (originalThumbnail != null) ? Bitmap.createScaledBitmap(originalThumbnail, 45, 45, true) : placeholder;
-        } catch (Exception e) {
-            Log.d("DB1", "FragmentZipLibraryVideoFile.createVideoThumbnail - No thumbnail created: " + e.getMessage());
-            return placeholder;
-        } finally {
-            retriever.release();
+        try (MediaMetadataRetriever retriever = new MediaMetadataRetriever()) {
+            try {
+                retriever.setDataSource(videoPath);
+                Bitmap originalThumbnail = retriever.getFrameAtTime(1000000, MediaMetadataRetriever.OPTION_CLOSEST_SYNC);
+                return (originalThumbnail != null) ? Bitmap.createScaledBitmap(originalThumbnail, 45, 45, true) : placeholder;
+            } catch (Exception e) {
+                Log.d("DB1", "FragmentZipLibraryVideoFile.createVideoThumbnail - No thumbnail created: " + e.getMessage());
+                return placeholder;
+            } finally {
+                retriever.release();
+            }
         }
     }
 

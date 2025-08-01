@@ -17,14 +17,9 @@ import android.widget.TextView;
 
 import com.dennisbrink.mt.global.mypackedfileviewer.IZipApplication;
 import com.dennisbrink.mt.global.mypackedfileviewer.R;
-import com.dennisbrink.mt.global.mypackedfileviewer.events.VideoThumbnailFinalEvent;
 import com.dennisbrink.mt.global.mypackedfileviewer.structures.ZipEntryData;
 import com.dennisbrink.mt.global.mypackedfileviewer.ZipFileAdapter;
 import com.dennisbrink.mt.global.mypackedfileviewer.libraries.ZipUtilities;
-
-import org.greenrobot.eventbus.EventBus;
-import org.greenrobot.eventbus.Subscribe;
-import org.greenrobot.eventbus.ThreadMode;
 
 import java.util.List;
 import java.util.Objects;
@@ -34,8 +29,6 @@ public class FragmentZipLibrary extends Fragment implements IZipApplication {
 
     ZipFileAdapter adapter;
     List<ZipEntryData> zipContent;
-    private String source, target, zipkey, name;
-    private int position;
 
     public static FragmentZipLibrary newInstance(String source, String target, String name, String zipkey, int position) {
         FragmentZipLibrary fragment = new FragmentZipLibrary();
@@ -60,15 +53,16 @@ public class FragmentZipLibrary extends Fragment implements IZipApplication {
         recyclerView.setLayoutManager(new LinearLayoutManager(requireActivity()));
 
         Bundle args = getArguments();
-
         assert args != null;
-        source = args.getString("source");
-        target = args.getString("target");
-        name = args.getString("name");
-        zipkey = args.getString("zipkey");
-        position = args.getInt("position", -1);
 
-        Log.d("DB1", "FragmentZipLibrary.onCreateView: position after opening fragment: " + position);
+        String source = args.getString("source");
+        String target = args.getString("target");
+        String name = args.getString("name");
+        String zipkey = args.getString("zipkey");
+
+        int position = args.getInt("position", -1);
+
+        Log.d("DB1", "FragmentZipLibrary.onCreateView - position after opening fragment: " + position);
         try {
             // Example usage of the collected data
             TextView targetTextView = view.findViewById(R.id.targetTextView);
@@ -95,7 +89,7 @@ public class FragmentZipLibrary extends Fragment implements IZipApplication {
             recyclerView.setAdapter(adapter);
 
         } catch (Exception e){
-            Log.d("DB1", "FragmentZipLibrary.onCreateView: Error after opening fragment: " + e.getMessage());
+            Log.d("DB1", "FragmentZipLibrary.onCreateView - Error after opening fragment: " + e.getMessage());
         }
         return view;
     }
